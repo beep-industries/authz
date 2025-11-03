@@ -1,0 +1,23 @@
+schemaFile: "../beep.zed"
+relationships: |-
+  // Server setup
+  server:discord_server#owner@user:alice
+
+  // Roles setup
+  role:moderator#server@server:discord_server
+  role:moderator#member@user:bob
+
+  // Channel setup
+  channel:general#server@server:discord_server
+
+  // Message sender permissions
+  server:discord_server#message_sender@role:moderator#member
+
+assertions:
+  assertTrue:
+    - channel:general#send_message@user:alice   # Server owner can send messages
+    - channel:general#send_message@user:bob     # User with moderator role can send messages
+
+  assertFalse:
+    - channel:general#send_message@user:charlie # User without role cannot send messages
+    - channel:general#send_message@user:dave    # Random user cannot send messages

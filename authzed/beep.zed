@@ -1,0 +1,55 @@
+/**
+ * user represents a person using the Discord-like application
+ */
+definition user {}
+
+
+/**
+ * server represents a Discord-like server/guild that users can join
+ */
+definition server {
+    /**
+     * owner indicates the user who owns and has full control over the server
+     */
+    relation owner: user
+
+    /**
+     * message_sender indicates roles that can send messages in this server
+     */
+    relation message_sender: role#member
+    
+    /**
+     * can_send_message indicates permission to send messages in this server
+     */
+    permission can_send_message = owner + message_sender 
+}
+
+/**
+ * role represents a permission container that can be assigned to server members
+ */
+definition role {
+    /**
+     * server indicates which server this role belongs to
+     */
+    relation server: server
+
+    /**
+     * member indicates users who have been assigned this role
+     */
+    relation member: user
+}
+
+/**
+ * channel represents a communication channel within a server
+ */
+definition channel {
+    /**
+     * server indicates which server this channel belongs to
+     */
+    relation server: server
+    
+    /**
+     * send_message indicates permission to send messages in the channel
+     */
+    permission send_message = server->can_send_message
+}

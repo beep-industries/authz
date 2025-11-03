@@ -1,0 +1,21 @@
+services:
+  zed-cli:
+    image: authzed/zed:latest-debug
+    entrypoint: ["sleep", "infinity"] 
+    restart: unless-stopped
+    volumes:
+      - ./beep.zed:/beep/beep.zed
+      - ./validations:/beep/validations
+
+  spicedb-playground:
+    image: ghcr.io/authzed/spicedb-playground:latest
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - spicedb-network
+
+networks:
+  spicedb-network:
+    driver: bridge
+
