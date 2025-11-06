@@ -49,7 +49,18 @@ definition channel {
     relation server: server
     
     /**
-     * send_message indicates permission to send messages in the channel
+     * send_message_grant indicates explicit permission grants for sending messages
      */
-    permission send_message = server->can_send_message
+    relation send_message_grant: user | role#member
+    
+    /**
+     * send_message_deny indicates explicit permission denies for sending messages
+     */
+    relation send_message_deny: user | role#member
+    
+    /**
+     * send_message indicates permission to send messages in the channel
+     * Denies take precedence over grants
+     */
+    permission send_message = (server->can_send_message + send_message_grant) - send_message_deny
 }
