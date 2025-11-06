@@ -1,0 +1,47 @@
+schemaFile: "../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+  
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user
+  
+  role:basic#server@server:test_server
+  role:basic#member@user:basic_user1
+  role:basic#member@user:basic_user2
+  role:basic#member@user:basic_user3
+
+  // Channel setup
+  channel:override_test#server@server:test_server
+
+  // Base permissions - only admins can send by default
+  server:test_server#message_sender@role:admin#member
+  
+  // Override scenarios
+  // 1. Grant moderator role permission (role-level grant)
+  channel:override_test#send_message_grant@role:moderator#member
+  
+  // 2. Grant specific basic user permission (user-level grant)
+  channel:override_test#send_message_grant@user:basic_user1
+  
+  // 3. Deny admin user permission (user-level deny overrides role permission)
+  channel:override_test#send_message_deny@user:admin_user
+  
+  // 4. Grant then deny same user (deny should win)
+  channel:override_test#send_message_grant@user:basic_user2
+  channel:override_test#send_message_deny@user:basic_user2
+
+assertions:
+  assertTrue:
+    - channel:override_test#send_message@user:owner        # Server owner always has permission
+    - channel:override_test#send_message@user:mod_user     # Moderator granted via role override
+    - channel:override_test#send_message@user:basic_user1  # Basic user granted via user override
+
+  assertFalse:
+    - channel:override_test#send_message@user:admin_user   # Admin denied via user override
+    - channel:override_test#send_message@user:basic_user2  # User with both grant and deny (deny wins)
+    - channel:override_test#send_message@user:basic_user3  # Basic user with no overrides
