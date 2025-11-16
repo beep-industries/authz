@@ -1,4 +1,4 @@
-schemaFile: "../beep.zed"
+schemaFile: "../../beep.zed"
 relationships: |-
   // Server setup
   server:test_server#owner@user:owner
