@@ -1,0 +1,40 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:manager#server@server:test_server
+  role:manager#member@user:manager_user
+  
+  role:basic#server@server:test_server
+  role:basic#member@user:basic_user1
+  role:basic#member@user:basic_user2
+  role:basic#member@user:basic_user3
+
+  // Channel setup
+  channel:test_channel#server@server:test_server
+
+  // Base permissions - only managers can manage messages by default
+  server:test_server#message_manager@role:manager#member
+  
+  // Override scenarios
+  // Grant specific basic user permission (user-level grant)
+  channel:test_channel#manage_message_grant@user:basic_user1
+  
+  // Deny manager user permission (user-level deny overrides role permission)
+  channel:test_channel#manage_message_deny@user:manager_user
+  
+  // Grant then deny same user (deny should win)
+  channel:test_channel#manage_message_grant@user:basic_user2
+  channel:test_channel#manage_message_deny@user:basic_user2
+
+assertions:
+  assertTrue:
+    - channel:test_channel#manage_message@user:owner        # Server owner can manage messages
+    - channel:test_channel#manage_message@user:basic_user1  # Basic user granted via user override
+
+  assertFalse:
+    - channel:test_channel#manage_message@user:manager_user # Manager denied via user override
+    - channel:test_channel#manage_message@user:basic_user2  # User with both grant and deny (deny wins)
+    - channel:test_channel#manage_message@user:basic_user3  # Basic user with no overrides

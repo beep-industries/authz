@@ -1,4 +1,4 @@
-schemaFile: "../beep.zed"
+schemaFile: "../../beep.zed"
 relationships: |-
   // Server setup
   server:discord_server#owner@user:alice

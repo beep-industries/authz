@@ -1,0 +1,40 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:webhook_admin#server@server:test_server
+  role:webhook_admin#member@user:webhook_admin_user
+  
+  role:basic#server@server:test_server
+  role:basic#member@user:basic_user1
+  role:basic#member@user:basic_user2
+  role:basic#member@user:basic_user3
+
+  // Channel setup
+  channel:test_channel#server@server:test_server
+
+  // Base permissions - only webhook admins can manage webhooks by default
+  server:test_server#webhook_manager@role:webhook_admin#member
+  
+  // Override scenarios
+  // Grant specific basic user permission (user-level grant)
+  channel:test_channel#manage_webhooks_grant@user:basic_user1
+  
+  // Deny webhook admin user permission (user-level deny overrides role permission)
+  channel:test_channel#manage_webhooks_deny@user:webhook_admin_user
+  
+  // Grant then deny same user (deny should win)
+  channel:test_channel#manage_webhooks_grant@user:basic_user2
+  channel:test_channel#manage_webhooks_deny@user:basic_user2
+
+assertions:
+  assertTrue:
+    - channel:test_channel#manage_webhooks@user:owner        # Server owner can manage webhooks
+    - channel:test_channel#manage_webhooks@user:basic_user1  # Basic user granted via user override
+
+  assertFalse:
+    - channel:test_channel#manage_webhooks@user:webhook_admin_user # Webhook admin denied via user override
+    - channel:test_channel#manage_webhooks@user:basic_user2        # User with both grant and deny (deny wins)
+    - channel:test_channel#manage_webhooks@user:basic_user3        # Basic user with no overrides
