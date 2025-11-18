@@ -1,0 +1,70 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:discord_server#owner@user:alice
+
+  // Roles setup - test various permission combinations
+  role:superadmin#server@server:discord_server
+  role:superadmin#member@user:bob
+  
+  role:admin#server@server:discord_server
+  role:admin#member@user:charlie
+  
+  role:moderator#server@server:discord_server
+  role:moderator#member@user:diana
+  
+  role:viewer#server@server:discord_server
+  role:viewer#member@user:eve
+  
+  role:member#server@server:discord_server
+  role:member#member@user:frank
+  role:member#member@user:grace
+
+  // Permission assignments
+  // Superadmin: can manage and view roles
+  server:discord_server#role_manager@role:superadmin#member
+  server:discord_server#role_viewer@role:superadmin#member
+  
+  // Admin: can only manage roles (not view - edge case)
+  server:discord_server#role_manager@role:admin#member
+  
+  // Moderator: can only view roles (not manage)
+  server:discord_server#role_viewer@role:moderator#member
+  
+  // Viewer: has viewer role but not role viewing permission (confusing naming test)
+  // No permissions assigned
+  
+  // Member: no permissions
+
+assertions:
+  assertTrue:
+    # Owner has all permissions
+    - server:discord_server#can_manage_role@user:alice
+    - server:discord_server#can_view_role@user:alice
+    
+    # Superadmin has both permissions
+    - server:discord_server#can_manage_role@user:bob
+    - server:discord_server#can_view_role@user:bob
+    
+    # Admin can manage (edge case: has manage but not view)
+    - server:discord_server#can_manage_role@user:charlie
+    
+    # Moderator can view only
+    - server:discord_server#can_view_role@user:diana
+
+  assertFalse:
+    # Admin cannot view (edge case: has manage but not view)
+    - server:discord_server#can_view_role@user:charlie
+    
+    # Moderator cannot manage
+    - server:discord_server#can_manage_role@user:diana
+    
+    # Viewer role has no role permissions
+    - server:discord_server#can_manage_role@user:eve
+    - server:discord_server#can_view_role@user:eve
+    
+    # Regular members have no permissions
+    - server:discord_server#can_manage_role@user:frank
+    - server:discord_server#can_view_role@user:frank
+    - server:discord_server#can_manage_role@user:grace
+    - server:discord_server#can_view_role@user:grace
