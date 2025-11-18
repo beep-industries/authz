@@ -7,6 +7,29 @@
 You can find the schema [here](./authzed/beep.zed).
 It defines the permissions of a server member. A member can have a role that has capabilities (eg: can_send_message).
 
+### Capabilities Matrix
+
+| Capability | Server | Role | Channel | Description |
+|------------|:------:|:----:|:-------:|-------------|
+| **send_message** | ✓ | - | ✓ | Send messages in channels |
+| **view_channel** | ✓ | - | ✓ | View and access channels |
+| **manage_message** | ✓ | - | ✓ | Delete/edit other users' messages |
+| **attach_files** | ✓ | - | ✓ | Attach files to messages |
+| **manage_webhooks** | ✓ | - | ✓ | Create/edit/delete webhooks |
+| **manage_role** | ✓ | ✓ | - | Create/edit/delete roles |
+| **view_role** | ✓ | ✓ | - | List and view role information |
+
+**Legend:**
+- **Server**: Base permission defined at server level via role relations (e.g., `server:my_server#message_sender@role:admin#member`)
+- **Role**: Entity-level overrides with grant/deny (e.g., `role:moderator#manage_role_grant@user:alice`)
+- **Channel**: Entity-level overrides with grant/deny (e.g., `channel:general#send_message_grant@user:bob`)
+
+**Permission Hierarchy:**
+1. Server owner has implicit access to all capabilities
+2. Server-level permissions granted through role relations
+3. Entity-level grants add permissions
+4. Entity-level denies remove permissions (highest priority)
+
 ### Validation
 
 Setup the zed cli inside docker:
@@ -30,6 +53,43 @@ You can now launch the verification:
 zed validate validations/*
 ```
 
+### Role Permissions
+
+The schema supports comprehensive role management capabilities on servers:
+
+- **`can_manage_role`**: Permission to create, edit, and delete roles in the server
+- **`can_view_role`**: Permission to list and read role information in the server
+
+These permissions follow the same pattern as channel permissions:
+- Server owners have implicit access to all role permissions
+- Role-based access is granted through the `role_manager` and `role_viewer` relations
+- Each permission has dedicated validation tests in `validations/roles/`
+
+**Role-Level Permission Overrides:**
+
+Similar to channels, roles now support permission overrides with grant/deny mechanics:
+- Roles can have specific permission grants or denies for individual users or other roles
+- This allows fine-grained control like "editor role can manage the moderator role specifically"
+- Denies always take precedence over grants
+
+Example usage:
+```yaml
+# Grant role management permission to admin role
+server:my_server#role_manager@role:admin#member
+
+# Grant role viewing permission to moderator role
+server:my_server#role_viewer@role:moderator#member
+
+# Allow editor role to manage a specific role (role-level override)
+role:moderator#manage_role_grant@role:editor#member
+
+# Allow a specific user to view a role (user-level override)
+role:admin#view_role_grant@user:alice
+
+# Deny a user from managing a specific role (deny takes precedence)
+role:moderator#manage_role_deny@user:bob
+```
+
 ### Repository structure
 
 ```
@@ -38,10 +98,21 @@ authzed/
 │                                      # Defines user, server, role, and channel resources
 │                                      # with their relations and permissions
 ├── validations/                       # Validation test files for the schema
-│   ├── send-message.yaml             # Basic send message permission tests
-│   │                                  # Tests server owners and role-based permissions
-│   └── permission-overrides.yaml     # Advanced permission override tests
-│                                      # Tests grant/deny mechanics and precedence rules
+│   ├── channels/                      # Channel permission validations
+│   │   ├── send-message.yaml         # Basic send message permission tests
+│   │   ├── view-channel.yaml         # Channel viewing permission tests
+│   │   ├── manage-message.yaml       # Message management permission tests
+│   │   ├── attach-files.yaml         # File attachment permission tests
+│   │   ├── manage-webhooks.yaml      # Webhook management permission tests
+│   │   └── permission-overrides.yaml # Advanced permission override tests
+│   │                                  # Tests grant/deny mechanics and precedence rules
+│   └── roles/                         # Role permission validations
+│       ├── manage-role.yaml          # Role management permission tests
+│       ├── view-role.yaml            # Role viewing permission tests
+│       ├── role-permissions.yaml     # Combined role permission tests
+│       │                              # Tests permission hierarchy and interactions
+│       └── role-overrides.yaml       # Role-level permission override tests
+│                                      # Tests grant/deny mechanics on specific roles
 ├── docker-compose.yml                # Docker setup for SpiceDB and zed CLI
 └── README.md                         # Documentation for the authzed implementation
 
@@ -49,6 +120,8 @@ Schema Features:
 - Permission overrides (grant/deny) similar to Discord
 - Role-based permissions with server ownership
 - Channel-level permission controls
+- Role management capabilities (manage and view roles)
+- Role-level permission overrides (grant/deny on specific roles)
 - Validation tests covering various scenarios
 ```
 

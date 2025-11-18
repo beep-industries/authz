@@ -62,10 +62,31 @@ definition server {
      * can_manage_webhooks indicates permission to manage webhooks in this server
      */
     permission can_manage_webhooks = owner + webhook_manager
+    
+    /**
+     * role_manager indicates roles that can manage (create/edit/delete) roles in this server
+     */
+    relation role_manager: role#member
+    
+    /**
+     * can_manage_role indicates permission to manage (create/edit/delete) roles in this server
+     */
+    permission can_manage_role = owner + role_manager
+    
+    /**
+     * role_viewer indicates roles that can view (list/read) role information in this server
+     */
+    relation role_viewer: role#member
+    
+    /**
+     * can_view_role indicates permission to view (list/read) role information in this server
+     */
+    permission can_view_role = owner + role_viewer
 }
 
 /**
  * role represents a permission container that can be assigned to server members
+ * Roles can have permission overrides (grant/deny) similar to channels
  */
 definition role {
     /**
@@ -77,6 +98,38 @@ definition role {
      * member indicates users who have been assigned this role
      */
     relation member: user
+    
+    /**
+     * manage_role_grant indicates explicit permission grants for managing roles
+     */
+    relation manage_role_grant: user | role#member
+    
+    /**
+     * manage_role_deny indicates explicit permission denies for managing roles
+     */
+    relation manage_role_deny: user | role#member
+    
+    /**
+     * manage_role indicates permission to manage (create/edit/delete) roles
+     * Denies take precedence over grants
+     */
+    permission manage_role = (server->can_manage_role + manage_role_grant) - manage_role_deny
+    
+    /**
+     * view_role_grant indicates explicit permission grants for viewing roles
+     */
+    relation view_role_grant: user | role#member
+    
+    /**
+     * view_role_deny indicates explicit permission denies for viewing roles
+     */
+    relation view_role_deny: user | role#member
+    
+    /**
+     * view_role indicates permission to view (list/read) role information
+     * Denies take precedence over grants
+     */
+    permission view_role = (server->can_view_role + view_role_grant) - view_role_deny
 }
 
 /**
