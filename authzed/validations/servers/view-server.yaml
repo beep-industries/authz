@@ -1,0 +1,33 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+  
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user
+  
+  role:viewer#server@server:test_server
+  role:viewer#member@user:viewer_user
+  
+  role:member#server@server:test_server
+  role:member#member@user:member_user1
+  role:member#member@user:member_user2
+
+  // Server viewing permissions - admins and moderators can view server info
+  server:test_server#server_viewer@role:admin#member
+  server:test_server#server_viewer@role:moderator#member
+
+assertions:
+  assertTrue:
+    - server:test_server#view@user:owner      # Server owner can view server
+    - server:test_server#view@user:admin_user # Admin with server_viewer can view server
+    - server:test_server#view@user:mod_user   # Moderator with server_viewer can view server
+
+  assertFalse:
+    - server:test_server#view@user:viewer_user  # Viewer role without permission cannot view server
+    - server:test_server#view@user:member_user1 # Regular member cannot view server
+    - server:test_server#view@user:member_user2 # Another member without permission
