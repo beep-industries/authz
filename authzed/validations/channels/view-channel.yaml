@@ -31,10 +31,10 @@ relationships: |-
 
 assertions:
   assertTrue:
-    - channel:test_channel#view_channel@user:owner        # Server owner can view channel
-    - channel:test_channel#view_channel@user:basic_user1  # Basic user granted via user override
+    - channel:test_channel#view@user:owner        # Server owner can view channel
+    - channel:test_channel#view@user:basic_user1  # Basic user granted via user override
 
   assertFalse:
-    - channel:test_channel#view_channel@user:viewer_user  # Viewer denied via user override
-    - channel:test_channel#view_channel@user:basic_user2  # User with both grant and deny (deny wins)
-    - channel:test_channel#view_channel@user:basic_user3  # Basic user with no overrides
+    - channel:test_channel#view@user:viewer_user  # Viewer denied via user override
+    - channel:test_channel#view@user:basic_user2  # User with both grant and deny (deny wins)
+    - channel:test_channel#view@user:basic_user3  # Basic user with no overrides

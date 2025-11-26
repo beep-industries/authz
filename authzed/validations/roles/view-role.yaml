@@ -24,10 +24,10 @@ relationships: |-
 assertions:
   assertTrue:
     - server:test_server#can_view_role@user:owner      # Server owner can view roles
-    - server:test_server#can_view_role@user:admin_user # Admin with role_viewer can view roles
-    - server:test_server#can_view_role@user:mod_user   # Moderator with role_viewer can view roles
+    - role:admin#view@user:admin_user # Admin with role_viewer can view roles
+    - role:moderator#view@user:mod_user   # Moderator with role_viewer can view roles
 
   assertFalse:
-    - server:test_server#can_view_role@user:viewer_user  # Viewer role without permission cannot view roles
-    - server:test_server#can_view_role@user:member_user1 # Regular member cannot view roles
-    - server:test_server#can_view_role@user:member_user2 # Another member without permission
+    - role:viewer#view@user:viewer_user  # Viewer role without permission cannot view roles
+    - role:member#view@user:member_user1 # Regular member cannot view roles
+    - role:member#view@user:member_user2 # Another member without permission
