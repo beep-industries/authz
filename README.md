@@ -18,6 +18,8 @@ It defines the permissions of a server member. A member can have a role that has
 | **manage_webhooks** | ✓ | - | ✓ | Create/edit/delete webhooks |
 | **manage_role** | ✓ | ✓ | - | Create/edit/delete roles |
 | **view_role** | ✓ | ✓ | - | List and view role information |
+| **manage_server** | ✓ | - | - | Edit/delete server settings |
+| **view_server** | ✓ | - | - | List and view server information |
 
 **Legend:**
 - **Server**: Base permission defined at server level via role relations (e.g., `server:my_server#message_sender@role:admin#member`)
@@ -90,6 +92,30 @@ role:admin#view_role_grant@user:alice
 role:moderator#manage_role_deny@user:bob
 ```
 
+### Server Permissions
+
+The schema supports server management capabilities:
+
+- **`can_manage_server`**: Permission to edit server settings and delete the server
+- **`can_view_server`**: Permission to view server information and list servers
+
+These permissions follow the same pattern as role permissions:
+- Server owners have implicit access to all server permissions
+- Role-based access is granted through the `server_manager` and `server_viewer` relations
+- Each permission has dedicated validation tests in `validations/servers/`
+
+**Note:** Unlike channels and roles, servers do not support entity-level permission overrides
+since the server itself is the top-level authority in the permission hierarchy.
+
+Example usage:
+```yaml
+# Grant server management permission to admin role
+server:my_server#server_manager@role:admin#member
+
+# Grant server viewing permission to moderator role
+server:my_server#server_viewer@role:moderator#member
+```
+
 ### Repository structure
 
 ```
@@ -106,13 +132,18 @@ authzed/
 │   │   ├── manage-webhooks.yaml      # Webhook management permission tests
 │   │   └── permission-overrides.yaml # Advanced permission override tests
 │   │                                  # Tests grant/deny mechanics and precedence rules
-│   └── roles/                         # Role permission validations
-│       ├── manage-role.yaml          # Role management permission tests
-│       ├── view-role.yaml            # Role viewing permission tests
-│       ├── role-permissions.yaml     # Combined role permission tests
-│       │                              # Tests permission hierarchy and interactions
-│       └── role-overrides.yaml       # Role-level permission override tests
-│                                      # Tests grant/deny mechanics on specific roles
+│   ├── roles/                         # Role permission validations
+│   │   ├── manage-role.yaml          # Role management permission tests
+│   │   ├── view-role.yaml            # Role viewing permission tests
+│   │   ├── role-permissions.yaml     # Combined role permission tests
+│   │   │                              # Tests permission hierarchy and interactions
+│   │   └── role-overrides.yaml       # Role-level permission override tests
+│   │                                  # Tests grant/deny mechanics on specific roles
+│   └── servers/                       # Server permission validations
+│       ├── manage-server.yaml        # Server management permission tests
+│       ├── view-server.yaml          # Server viewing permission tests
+│       └── server-permissions.yaml   # Combined server permission tests
+│                                      # Tests permission hierarchy and interactions
 ├── docker-compose.yml                # Docker setup for SpiceDB and zed CLI
 └── README.md                         # Documentation for the authzed implementation
 
@@ -122,6 +153,7 @@ Schema Features:
 - Channel-level permission controls
 - Role management capabilities (manage and view roles)
 - Role-level permission overrides (grant/deny on specific roles)
+- Server management capabilities (manage and view servers)
 - Validation tests covering various scenarios
 ```
 
