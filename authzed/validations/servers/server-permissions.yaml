@@ -1,0 +1,70 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:production_server#owner@user:alice
+
+  // Roles setup - test various permission combinations
+  role:superadmin#server@server:production_server
+  role:superadmin#member@user:bob
+  
+  role:admin#server@server:production_server
+  role:admin#member@user:charlie
+  
+  role:moderator#server@server:production_server
+  role:moderator#member@user:diana
+  
+  role:viewer#server@server:production_server
+  role:viewer#member@user:eve
+  
+  role:member#server@server:production_server
+  role:member#member@user:frank
+  role:member#member@user:grace
+
+  // Permission assignments
+  // Superadmin: can manage and view server
+  server:production_server#server_manager@role:superadmin#member
+  server:production_server#server_viewer@role:superadmin#member
+  
+  // Admin: can only manage server (not view - edge case)
+  server:production_server#server_manager@role:admin#member
+  
+  // Moderator: can only view server (not manage)
+  server:production_server#server_viewer@role:moderator#member
+  
+  // Viewer: has viewer role but not server viewing permission
+  // No permissions assigned
+  
+  // Member: no permissions
+
+assertions:
+  assertTrue:
+    # Owner has all permissions
+    - server:production_server#manage@user:alice
+    - server:production_server#view@user:alice
+    
+    # Superadmin has both permissions
+    - server:production_server#manage@user:bob
+    - server:production_server#view@user:bob
+    
+    # Admin can manage (edge case: has manage but not view)
+    - server:production_server#manage@user:charlie
+    
+    # Moderator can view only
+    - server:production_server#view@user:diana
+
+  assertFalse:
+    # Admin cannot view (edge case: has manage but not view)
+    - server:production_server#view@user:charlie
+    
+    # Moderator cannot manage
+    - server:production_server#manage@user:diana
+    
+    # Viewer role has no server permissions
+    - server:production_server#manage@user:eve
+    - server:production_server#view@user:eve
+    
+    # Regular members have no permissions
+    - server:production_server#manage@user:frank
+    - server:production_server#view@user:frank
+    - server:production_server#manage@user:grace
+    - server:production_server#view@user:grace

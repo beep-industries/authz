@@ -1,0 +1,28 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+  
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user
+  
+  role:member#server@server:test_server
+  role:member#member@user:member_user1
+  role:member#member@user:member_user2
+
+  // Server management permissions - only admins can manage server by default
+  server:test_server#server_manager@role:admin#member
+
+assertions:
+  assertTrue:
+    - server:test_server#manage@user:owner       # Server owner can manage server
+    - server:test_server#manage@user:admin_user  # Admin with server_manager can manage server
+
+  assertFalse:
+    - server:test_server#manage@user:mod_user      # Moderator without permission cannot manage server
+    - server:test_server#manage@user:member_user1  # Regular member cannot manage server
+    - server:test_server#manage@user:member_user2  # Another member without permission
