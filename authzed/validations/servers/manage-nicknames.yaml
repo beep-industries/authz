@@ -1,0 +1,32 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+  
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user1
+  role:moderator#member@user:mod_user2
+  
+  role:member#server@server:test_server
+  role:member#member@user:member_user1
+  role:member#member@user:member_user2
+  role:member#member@user:member_user3
+
+  // Nickname management permissions - only admins can manage nicknames
+  server:test_server#nickname_manager@role:admin#member
+
+assertions:
+  assertTrue:
+    - server:test_server#can_manage_nicknames@user:owner       # Server owner can manage nicknames
+    - server:test_server#can_manage_nicknames@user:admin_user  # Admin with nickname_manager can manage nicknames
+
+  assertFalse:
+    - server:test_server#can_manage_nicknames@user:mod_user1      # Moderator without permission cannot manage nicknames
+    - server:test_server#can_manage_nicknames@user:mod_user2      # Another moderator without permission
+    - server:test_server#can_manage_nicknames@user:member_user1   # Regular member cannot manage nicknames
+    - server:test_server#can_manage_nicknames@user:member_user2   # Another member without permission
+    - server:test_server#can_manage_nicknames@user:member_user3   # Third member without permission
