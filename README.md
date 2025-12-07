@@ -5,7 +5,7 @@
 ### Schema 
 
 You can find the schema [here](./authzed/beep.zed).
-It defines the permissions of a server member. A member can have a role that has capabilities (eg: can_send_message).
+It defines the permissions of a server member. A member can have a role that has capabilities (eg: send_message).
 
 ### Capabilities Matrix
 
@@ -61,8 +61,8 @@ zed validate validations/*
 
 The schema supports comprehensive role management capabilities on servers:
 
-- **`can_manage_role`**: Permission to create, edit, and delete roles in the server
-- **`can_view_role`**: Permission to list and read role information in the server
+- **`manage_role`**: Permission to create, edit, and delete roles in the server
+- **`view_role`**: Permission to list and read role information in the server
 
 These permissions follow the same pattern as channel permissions:
 - Server owners have implicit access to all role permissions
@@ -98,10 +98,10 @@ role:moderator#manage_role_deny@user:bob
 
 The schema supports server management capabilities:
 
-- **`can_manage_server`**: Permission to edit server settings and delete the server
-- **`can_view_server`**: Permission to view server information and list servers
-- **`can_manage_nicknames`**: Permission to edit any user's nickname in the server
-- **`can_change_nickname`**: Permission to change your own nickname in the server
+- **`manage_server`**: Permission to edit server settings and delete the server
+- **`view_server`**: Permission to view server information and list servers
+- **`manage_nicknames`**: Permission to edit any user's nickname in the server
+- **`change_nickname`**: Permission to change your own nickname in the server
 
 These permissions follow the same pattern as role permissions:
 - Server owners have implicit access to all server permissions

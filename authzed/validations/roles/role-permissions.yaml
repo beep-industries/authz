@@ -39,8 +39,8 @@ relationships: |-
 assertions:
   assertTrue:
     # Owner has all permissions
-    - server:discord_server#can_manage_role@user:alice
-    - server:discord_server#can_view_role@user:alice
+    - server:discord_server#manage_role@user:alice
+    - server:discord_server#view_role@user:alice
     
     # Superadmin has both permissions
     - role:superadmin#manage@user:bob

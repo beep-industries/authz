@@ -19,9 +19,9 @@ definition server {
     relation message_sender: role#member
     
     /**
-     * can_send_message indicates permission to send messages in this server
+     * send_message indicates permission to send messages in this server
      */
-    permission can_send_message = owner + message_sender
+    permission send_message = owner + message_sender
     
     /**
      * channel_viewer indicates roles that can view channels in this server
@@ -29,9 +29,9 @@ definition server {
     relation channel_viewer: role#member
     
     /**
-     * can_view_channel indicates permission to view channels in this server
+     * view_channel indicates permission to view channels in this server
      */
-    permission can_view_channel = owner + channel_viewer
+    permission view_channel = owner + channel_viewer
     
     /**
      * message_manager indicates roles that can manage (delete other) messages in this server
@@ -39,9 +39,9 @@ definition server {
     relation message_manager: role#member
     
     /**
-     * can_manage_message indicates permission to manage messages in this server
+     * manage_message indicates permission to manage messages in this server
      */
-    permission can_manage_message = owner + message_manager
+    permission manage_message = owner + message_manager
     
     /**
      * file_attacher indicates roles that can attach files to messages in this server
@@ -49,9 +49,9 @@ definition server {
     relation file_attacher: role#member
     
     /**
-     * can_attach_files indicates permission to attach files in this server
+     * attach_files indicates permission to attach files in this server
      */
-    permission can_attach_files = owner + file_attacher
+    permission attach_files = owner + file_attacher
     
     /**
      * webhook_manager indicates roles that can manage webhooks in this server
@@ -59,9 +59,9 @@ definition server {
     relation webhook_manager: role#member
     
     /**
-     * can_manage_webhooks indicates permission to manage webhooks in this server
+     * manage_webhooks indicates permission to manage webhooks in this server
      */
-    permission can_manage_webhooks = owner + webhook_manager
+    permission manage_webhooks = owner + webhook_manager
     
     /**
      * role_manager indicates roles that can manage (create/edit/delete) roles in this server
@@ -69,9 +69,9 @@ definition server {
     relation role_manager: role#member
     
     /**
-     * can_manage_role indicates permission to manage (create/edit/delete) roles in this server
+     * manage_role indicates permission to manage (create/edit/delete) roles in this server
      */
-    permission can_manage_role = owner + role_manager
+    permission manage_role = owner + role_manager
     
     /**
      * role_viewer indicates roles that can view (list/read) role information in this server
@@ -79,9 +79,9 @@ definition server {
     relation role_viewer: role#member
     
     /**
-     * can_view_role indicates permission to view (list/read) role information in this server
+     * view_role indicates permission to view (list/read) role information in this server
      */
-    permission can_view_role = owner + role_viewer
+    permission view_role = owner + role_viewer
     
     /**
      * server_manager indicates roles that can manage (edit/delete) the server
@@ -109,9 +109,9 @@ definition server {
     relation nickname_manager: role#member
     
     /**
-     * can_manage_nicknames indicates permission to manage (edit any user) nicknames in this server
+     * manage_nicknames indicates permission to manage (edit any user) nicknames in this server
      */
-    permission can_manage_nicknames = owner + nickname_manager
+    permission manage_nicknames = owner + nickname_manager
     
     /**
      * nickname_changer indicates roles that can change their own nickname in this server
@@ -119,9 +119,9 @@ definition server {
     relation nickname_changer: role#member
     
     /**
-     * can_change_nickname indicates permission to change your own nickname in this server
+     * change_nickname indicates permission to change your own nickname in this server
      */
-    permission can_change_nickname = owner + nickname_changer
+    permission change_nickname = owner + nickname_changer
 }
 
 /**
@@ -153,7 +153,7 @@ definition role {
      * manage indicates permission to manage (create/edit/delete) roles
      * Denies take precedence over grants
      */
-    permission manage = (server->can_manage_role + manage_role_grant) - manage_role_deny
+    permission manage = (server->manage_role + manage_role_grant) - manage_role_deny
     
     /**
      * view_role_grant indicates explicit permission grants for viewing roles
@@ -169,7 +169,7 @@ definition role {
      * view indicates permission to view (list/read) role information
      * Denies take precedence over grants
      */
-    permission view = (server->can_view_role + view_role_grant) - view_role_deny
+    permission view = (server->view_role + view_role_grant) - view_role_deny
 }
 
 /**
@@ -195,7 +195,7 @@ definition channel {
      * send_message indicates permission to send messages in the channel
      * Denies take precedence over grants
      */
-    permission send_message = (server->can_send_message + send_message_grant) - send_message_deny
+    permission send_message = (server->send_message + send_message_grant) - send_message_deny
     
     /**
      * view_channel_grant indicates explicit permission grants for viewing the channel
@@ -211,7 +211,7 @@ definition channel {
      * view indicates permission to view the channel
      * Denies take precedence over grants
      */
-    permission view = (server->can_view_channel + view_channel_grant) - view_channel_deny
+    permission view = (server->view_channel + view_channel_grant) - view_channel_deny
     
     /**
      * manage_message_grant indicates explicit permission grants for managing messages
@@ -227,7 +227,7 @@ definition channel {
      * manage_message indicates permission to manage (delete other) messages in the channel
      * Denies take precedence over grants
      */
-    permission manage_message = (server->can_manage_message + manage_message_grant) - manage_message_deny
+    permission manage_message = (server->manage_message + manage_message_grant) - manage_message_deny
     
     /**
      * attach_files_grant indicates explicit permission grants for attaching files
@@ -243,7 +243,7 @@ definition channel {
      * attach_files indicates permission to attach files to messages in the channel
      * Denies take precedence over grants
      */
-    permission attach_files = (server->can_attach_files + attach_files_grant) - attach_files_deny
+    permission attach_files = (server->attach_files + attach_files_grant) - attach_files_deny
     
     /**
      * manage_webhooks_grant indicates explicit permission grants for managing webhooks
@@ -259,5 +259,5 @@ definition channel {
      * manage_webhooks indicates permission to manage webhooks in the channel
      * Denies take precedence over grants
      */
-    permission manage_webhooks = (server->can_manage_webhooks + manage_webhooks_grant) - manage_webhooks_deny
+    permission manage_webhooks = (server->manage_webhooks + manage_webhooks_grant) - manage_webhooks_deny
 }
