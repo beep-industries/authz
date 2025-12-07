@@ -20,6 +20,8 @@ It defines the permissions of a server member. A member can have a role that has
 | **view_role** | ✓ | ✓ | - | List and view role information |
 | **manage_server** | ✓ | - | - | Edit/delete server settings |
 | **view_server** | ✓ | - | - | List and view server information |
+| **manage_nicknames** | ✓ | - | - | Edit any user's nickname |
+| **change_nickname** | ✓ | - | - | Change your own nickname |
 
 **Legend:**
 - **Server**: Base permission defined at server level via role relations (e.g., `server:my_server#message_sender@role:admin#member`)
@@ -98,14 +100,27 @@ The schema supports server management capabilities:
 
 - **`can_manage_server`**: Permission to edit server settings and delete the server
 - **`can_view_server`**: Permission to view server information and list servers
+- **`can_manage_nicknames`**: Permission to edit any user's nickname in the server
+- **`can_change_nickname`**: Permission to change your own nickname in the server
 
 These permissions follow the same pattern as role permissions:
 - Server owners have implicit access to all server permissions
-- Role-based access is granted through the `server_manager` and `server_viewer` relations
+- Role-based access is granted through the `server_manager`, `server_viewer`, `nickname_manager`, and `nickname_changer` relations
 - Each permission has dedicated validation tests in `validations/servers/`
 
 **Note:** Unlike channels and roles, servers do not support entity-level permission overrides
 since the server itself is the top-level authority in the permission hierarchy.
+
+**Nickname Permissions:**
+
+The schema distinguishes between two types of nickname management:
+- **`manage_nicknames`**: Administrative capability to edit ANY user's nickname (typically for moderators/admins)
+- **`change_nickname`**: User capability to change ONLY your own nickname
+
+These permissions are independent, allowing for scenarios where:
+- Regular members can change their own nickname but not others' nicknames
+- Administrators can manage all nicknames (and implicitly can change their own)
+- New members might not be able to change their nickname until they gain a trusted role
 
 Example usage:
 ```yaml
@@ -114,6 +129,12 @@ server:my_server#server_manager@role:admin#member
 
 # Grant server viewing permission to moderator role
 server:my_server#server_viewer@role:moderator#member
+
+# Grant nickname management permission to admin role
+server:my_server#nickname_manager@role:admin#member
+
+# Grant self-nickname changing permission to trusted members
+server:my_server#nickname_changer@role:trusted_member#member
 ```
 
 ### Repository structure
@@ -142,8 +163,12 @@ authzed/
 │   └── servers/                       # Server permission validations
 │       ├── manage-server.yaml        # Server management permission tests
 │       ├── view-server.yaml          # Server viewing permission tests
-│       └── server-permissions.yaml   # Combined server permission tests
-│                                      # Tests permission hierarchy and interactions
+│       ├── server-permissions.yaml   # Combined server permission tests
+│       │                              # Tests permission hierarchy and interactions
+│       ├── manage-nicknames.yaml     # Nickname management permission tests
+│       │                              # Tests admin ability to edit any user's nickname
+│       └── change-nickname.yaml      # Self-nickname change permission tests
+│                                      # Tests user ability to change their own nickname
 ├── docker-compose.yml                # Docker setup for SpiceDB and zed CLI
 └── README.md                         # Documentation for the authzed implementation
 

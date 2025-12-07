@@ -102,6 +102,26 @@ definition server {
      * view indicates permission to view server information
      */
     permission view = owner + server_viewer
+    
+    /**
+     * nickname_manager indicates roles that can manage (edit any user) nicknames in this server
+     */
+    relation nickname_manager: role#member
+    
+    /**
+     * can_manage_nicknames indicates permission to manage (edit any user) nicknames in this server
+     */
+    permission can_manage_nicknames = owner + nickname_manager
+    
+    /**
+     * nickname_changer indicates roles that can change their own nickname in this server
+     */
+    relation nickname_changer: role#member
+    
+    /**
+     * can_change_nickname indicates permission to change your own nickname in this server
+     */
+    permission can_change_nickname = owner + nickname_changer
 }
 
 /**
