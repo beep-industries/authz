@@ -1,0 +1,38 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+  
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user
+  
+  role:trusted_member#server@server:test_server
+  role:trusted_member#member@user:trusted_user1
+  role:trusted_member#member@user:trusted_user2
+  
+  role:member#server@server:test_server
+  role:member#member@user:member_user1
+  role:member#member@user:member_user2
+
+  // Nickname change permissions - trusted members and above can change their own nickname
+  server:test_server#nickname_changer@role:trusted_member#member
+  server:test_server#nickname_changer@role:moderator#member
+  
+  // Admin has nickname_manager but NOT nickname_changer (edge case)
+  server:test_server#nickname_manager@role:admin#member
+
+assertions:
+  assertTrue:
+    - server:test_server#can_change_nickname@user:owner         # Server owner can change their nickname
+    - server:test_server#can_change_nickname@user:mod_user      # Moderator with nickname_changer can change their nickname
+    - server:test_server#can_change_nickname@user:trusted_user1 # Trusted member can change their nickname
+    - server:test_server#can_change_nickname@user:trusted_user2 # Another trusted member can change their nickname
+
+  assertFalse:
+    - server:test_server#can_change_nickname@user:admin_user    # Admin with only manage_nicknames cannot change their own (edge case)
+    - server:test_server#can_change_nickname@user:member_user1  # Regular member cannot change their nickname
+    - server:test_server#can_change_nickname@user:member_user2  # Another member without permission
