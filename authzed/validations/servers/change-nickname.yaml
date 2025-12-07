@@ -27,12 +27,12 @@ relationships: |-
 
 assertions:
   assertTrue:
-    - server:test_server#can_change_nickname@user:owner         # Server owner can change their nickname
-    - server:test_server#can_change_nickname@user:mod_user      # Moderator with nickname_changer can change their nickname
-    - server:test_server#can_change_nickname@user:trusted_user1 # Trusted member can change their nickname
-    - server:test_server#can_change_nickname@user:trusted_user2 # Another trusted member can change their nickname
+    - server:test_server#change_nickname@user:owner         # Server owner can change their nickname
+    - server:test_server#change_nickname@user:mod_user      # Moderator with nickname_changer can change their nickname
+    - server:test_server#change_nickname@user:trusted_user1 # Trusted member can change their nickname
+    - server:test_server#change_nickname@user:trusted_user2 # Another trusted member can change their nickname
 
   assertFalse:
-    - server:test_server#can_change_nickname@user:admin_user    # Admin with only manage_nicknames cannot change their own (edge case)
-    - server:test_server#can_change_nickname@user:member_user1  # Regular member cannot change their nickname
-    - server:test_server#can_change_nickname@user:member_user2  # Another member without permission
+    - server:test_server#change_nickname@user:admin_user    # Admin with only manage_nicknames cannot change their own (edge case)
+    - server:test_server#change_nickname@user:member_user1  # Regular member cannot change their nickname
+    - server:test_server#change_nickname@user:member_user2  # Another member without permission

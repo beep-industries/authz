@@ -23,7 +23,7 @@ relationships: |-
 
 assertions:
   assertTrue:
-    - server:test_server#can_view_role@user:owner      # Server owner can view roles
+    - server:test_server#view_role@user:owner      # Server owner can view roles
     - role:admin#view@user:admin_user # Admin with role_viewer can view roles
     - role:moderator#view@user:mod_user   # Moderator with role_viewer can view roles
 

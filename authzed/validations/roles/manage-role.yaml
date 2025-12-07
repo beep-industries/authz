@@ -19,7 +19,7 @@ relationships: |-
 
 assertions:
   assertTrue:
-    - server:test_server#can_manage_role@user:owner       # Server owner can manage roles
+    - server:test_server#manage_role@user:owner       # Server owner can manage roles
     - role:admin#manage@user:admin_user  # Admin with role_manager can manage roles
 
   assertFalse:

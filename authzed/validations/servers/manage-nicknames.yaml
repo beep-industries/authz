@@ -21,12 +21,12 @@ relationships: |-
 
 assertions:
   assertTrue:
-    - server:test_server#can_manage_nicknames@user:owner       # Server owner can manage nicknames
-    - server:test_server#can_manage_nicknames@user:admin_user  # Admin with nickname_manager can manage nicknames
+    - server:test_server#manage_nicknames@user:owner       # Server owner can manage nicknames
+    - server:test_server#manage_nicknames@user:admin_user  # Admin with nickname_manager can manage nicknames
 
   assertFalse:
-    - server:test_server#can_manage_nicknames@user:mod_user1      # Moderator without permission cannot manage nicknames
-    - server:test_server#can_manage_nicknames@user:mod_user2      # Another moderator without permission
-    - server:test_server#can_manage_nicknames@user:member_user1   # Regular member cannot manage nicknames
-    - server:test_server#can_manage_nicknames@user:member_user2   # Another member without permission
-    - server:test_server#can_manage_nicknames@user:member_user3   # Third member without permission
+    - server:test_server#manage_nicknames@user:mod_user1      # Moderator without permission cannot manage nicknames
+    - server:test_server#manage_nicknames@user:mod_user2      # Another moderator without permission
+    - server:test_server#manage_nicknames@user:member_user1   # Regular member cannot manage nicknames
+    - server:test_server#manage_nicknames@user:member_user2   # Another member without permission
+    - server:test_server#manage_nicknames@user:member_user3   # Third member without permission
