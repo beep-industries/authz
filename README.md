@@ -1,5 +1,12 @@
 # Authz service
 
+## Rust Workspace
+
+This project is organized as a Rust workspace with the following members:
+
+- **`listeners`**: Binary crate that listens to RabbitMQ queues for authorization events and requests
+- **`core`**: Library crate that provides the core logic to interface with SpiceDB, handling permission checks and relationship management
+
 ## Authzed
 
 ### Schema 
