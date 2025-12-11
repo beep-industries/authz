@@ -1,7 +1,7 @@
 use tonic::transport::Channel;
 
 use crate::{
-    PermissionsServiceClient, SchemaServiceClient, WatchServiceClient,
+    PermissionsServiceClient, SchemaServiceClient,
     authzed::api::v1::{
         DeleteRelationshipsRequest, Relationship, RelationshipFilter, RelationshipUpdate,
         WriteRelationshipsRequest,
@@ -27,10 +27,10 @@ impl Default for AuthZedConfig {
 }
 
 /// Main AuthZed client with all service clients
+#[derive(Clone)]
 pub struct AuthZedClient {
     pub permissions: PermissionsServiceClient<Channel>,
     pub schema: SchemaServiceClient<Channel>,
-    pub watch: WatchServiceClient<Channel>,
 }
 
 impl AuthZedClient {
@@ -41,7 +41,6 @@ impl AuthZedClient {
         Ok(Self {
             permissions: PermissionsServiceClient::new(channel.clone()),
             schema: SchemaServiceClient::new(channel.clone()),
-            watch: WatchServiceClient::new(channel.clone()),
         })
     }
 

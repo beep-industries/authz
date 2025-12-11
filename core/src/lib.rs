@@ -23,3 +23,4 @@ pub use authzed::api::v1::{
 pub mod application;
 pub mod domain;
 pub mod infrastructure;
+
