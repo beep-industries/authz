@@ -7,6 +7,28 @@ This project is organized as a Rust workspace with the following members:
 - **`listeners`**: Binary crate that listens to RabbitMQ queues for authorization events and requests
 - **`core`**: Library crate that provides the core logic to interface with SpiceDB, handling permission checks and relationship management
 
+### AuthZed gRPC Client
+
+The `core` library includes a fully-featured Rust gRPC client for the AuthZed/SpiceDB API. See [`core/README.md`](./core/README.md) for detailed documentation.
+
+**Quick Example:**
+```rust
+use core::client::AuthZedClient;
+
+// Connect to local SpiceDB
+let client = AuthZedClient::new_insecure("localhost:50051").await?;
+
+// Or connect to AuthZed hosted
+let client = AuthZedClient::new_with_token("grpc.authzed.com:443", "your_token").await?;
+
+// Use the client
+client.permissions.check_permission(request).await?;
+```
+
+For more examples, see [`core/examples/`](./core/examples/).
+
+## Authz service
+
 ## Authzed
 
 ### Schema 
