@@ -7,4 +7,3 @@ pub trait ServerRepository: Send + Sync {
 pub trait ServerService: Send + Sync {
     fn create(&self, input: CreateServerInput) -> impl Future<Output = Result<(), ServerError>>;
 }
-

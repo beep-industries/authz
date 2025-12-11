@@ -16,6 +16,9 @@ impl AuthzedServerRepository {
 
 impl ServerRepository for AuthzedServerRepository {
     async fn create(&self, input: CreateServerInput) -> Result<(), ServerError> {
-        Ok(())
+        self.authzed_client
+            .create_relationship(input)
+            .await
+            .map_err(|e| ServerError::CreateServerError { msg: e.to_string() })
     }
 }
