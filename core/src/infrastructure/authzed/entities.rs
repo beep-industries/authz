@@ -1,9 +1,22 @@
+use std::fmt::Display;
+
 use crate::authzed::api::v1::{Relationship, RelationshipUpdate};
 
+#[derive(Debug)]
 pub enum Operation {
     Create,
     Delete,
     Touch,
+}
+
+impl Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Operation::Create => write!(f, "CREATE"),
+            Operation::Delete => write!(f, "DELETE"),
+            Operation::Touch => write!(f, "TOUCH"),
+        }
+    }
 }
 
 impl Into<i32> for Operation {
@@ -16,7 +29,6 @@ impl Into<i32> for Operation {
         }
     }
 }
-
 
 impl Into<RelationshipUpdate> for Relationship {
     fn into(self) -> RelationshipUpdate {
@@ -35,20 +47,23 @@ pub trait Action {
 
 impl<T: Into<Relationship> + Clone> Action for T {
     fn delete(&self) -> RelationshipUpdate {
-        let mut relationship_update: RelationshipUpdate = Into::<Relationship>::into(self.clone()).into();
-        relationship_update.operation = Operation::Delete.into(); 
+        let mut relationship_update: RelationshipUpdate =
+            Into::<Relationship>::into(self.clone()).into();
+        relationship_update.operation = Operation::Delete.into();
         relationship_update
     }
 
     fn create(&self) -> RelationshipUpdate {
-        let mut relationship_update: RelationshipUpdate = Into::<Relationship>::into(self.clone()).into();
-        relationship_update.operation = Operation::Delete.into(); 
+        let mut relationship_update: RelationshipUpdate =
+            Into::<Relationship>::into(self.clone()).into();
+        relationship_update.operation = Operation::Delete.into();
         relationship_update
     }
 
     fn touch(&self) -> RelationshipUpdate {
-        let mut relationship_update: RelationshipUpdate = Into::<Relationship>::into(self.clone()).into();
-        relationship_update.operation = Operation::Touch.into(); 
+        let mut relationship_update: RelationshipUpdate =
+            Into::<Relationship>::into(self.clone()).into();
+        relationship_update.operation = Operation::Touch.into();
         relationship_update
     }
 }

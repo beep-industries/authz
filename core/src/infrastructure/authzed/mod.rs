@@ -3,7 +3,7 @@ use tonic::transport::Channel;
 use crate::{
     PermissionsServiceClient, SchemaServiceClient, WatchServiceClient,
     authzed::api::v1::{
-        Relationship, RelationshipUpdate,
+        DeleteRelationshipsRequest, Relationship, RelationshipFilter, RelationshipUpdate,
         WriteRelationshipsRequest,
     },
     infrastructure::authzed::{entities::Action, error::AuthzedError},
@@ -62,7 +62,7 @@ impl AuthZedClient {
         relationship: impl Into<Relationship>,
     ) -> Result<(), AuthzedError> {
         let relationship: Relationship = relationship.into();
-        self.put_relationship(relationship.create()).await?;
+        self.write_relationship(relationship.create()).await?;
         Ok(())
     }
 
@@ -71,7 +71,7 @@ impl AuthZedClient {
         relationship: impl Into<Relationship>,
     ) -> Result<(), AuthzedError> {
         let relationship: Relationship = relationship.into();
-        self.put_relationship(relationship.delete()).await?;
+        self.write_relationship(relationship.delete()).await?;
         Ok(())
     }
 
@@ -80,11 +80,11 @@ impl AuthZedClient {
         relationship: impl Into<Relationship>,
     ) -> Result<(), AuthzedError> {
         let relationship: Relationship = relationship.into();
-        self.put_relationship(relationship.touch()).await?;
+        self.write_relationship(relationship.touch()).await?;
         Ok(())
     }
 
-    pub async fn put_relationships(
+    pub async fn write_relationships(
         &mut self,
         updates: Vec<RelationshipUpdate>,
     ) -> Result<(), AuthzedError> {
@@ -96,11 +96,29 @@ impl AuthZedClient {
         self.permissions
             .write_relationships(request)
             .await
-            .map_err(|e| AuthzedError::PutRelationshipError { msg: e.to_string() })?;
+            .map_err(|e| AuthzedError::WriteRelationshipError { msg: e.to_string() })?;
         Ok(())
     }
 
-    pub async fn put_relationship(
+    pub async fn filtered_delete(
+        &mut self,
+        relationship_filter: impl Into<RelationshipFilter>,
+    ) -> Result<(), AuthzedError> {
+        let relationship_filter: RelationshipFilter = relationship_filter.into();
+
+        let request = DeleteRelationshipsRequest {
+            relationship_filter: Some(relationship_filter),
+            ..Default::default()
+        };
+
+        self.permissions
+            .delete_relationships(request)
+            .await
+            .map_err(|e| AuthzedError::DeleteRelationshipError { msg: e.to_string() })?;
+        Ok(())
+    }
+
+    pub async fn write_relationship(
         &mut self,
         relationship_update: RelationshipUpdate,
     ) -> Result<(), AuthzedError> {
@@ -112,7 +130,7 @@ impl AuthZedClient {
         self.permissions
             .write_relationships(request)
             .await
-            .map_err(|e| AuthzedError::PutRelationshipError { msg: e.to_string() })?;
+            .map_err(|e| AuthzedError::WriteRelationshipError { msg: e.to_string() })?;
         Ok(())
     }
 }
