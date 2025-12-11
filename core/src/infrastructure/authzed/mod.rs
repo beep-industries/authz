@@ -3,10 +3,10 @@ use tonic::transport::Channel;
 use crate::{
     PermissionsServiceClient, SchemaServiceClient, WatchServiceClient,
     authzed::api::v1::{
-        ObjectReference, Relationship, RelationshipUpdate, SubjectReference,
-        WriteRelationshipsRequest, algebraic_subject_set::Operation,
+        Relationship, RelationshipUpdate,
+        WriteRelationshipsRequest,
     },
-    infrastructure::authzed::error::AuthzedError,
+    infrastructure::authzed::{entities::Action, error::AuthzedError},
 };
 pub mod entities;
 pub mod error;
@@ -57,26 +57,39 @@ impl AuthZedClient {
         Ok(channel)
     }
 
-    pub async fn put_relationship(
+    pub async fn create_relationship(
         &mut self,
-        operation: Operation,
-        resource: impl Into<Option<ObjectReference>>,
-        relationship: String,
-        subject: impl Into<Option<SubjectReference>>,
+        relationship: impl Into<Relationship>,
     ) -> Result<(), AuthzedError> {
-        let relationship = Relationship {
-            resource: resource.into(),
-            relation: relationship,
-            subject: subject.into(),
-            ..Default::default()
-        };
-        let update = RelationshipUpdate {
-            operation: operation.into(),
-            relationship: Some(relationship),
-            ..Default::default()
-        };
+        let relationship: Relationship = relationship.into();
+        self.put_relationship(relationship.create()).await?;
+        Ok(())
+    }
+
+    pub async fn delete_relationship(
+        &mut self,
+        relationship: impl Into<Relationship>,
+    ) -> Result<(), AuthzedError> {
+        let relationship: Relationship = relationship.into();
+        self.put_relationship(relationship.delete()).await?;
+        Ok(())
+    }
+
+    pub async fn touch_relationship(
+        &mut self,
+        relationship: impl Into<Relationship>,
+    ) -> Result<(), AuthzedError> {
+        let relationship: Relationship = relationship.into();
+        self.put_relationship(relationship.touch()).await?;
+        Ok(())
+    }
+
+    pub async fn put_relationships(
+        &mut self,
+        updates: Vec<RelationshipUpdate>,
+    ) -> Result<(), AuthzedError> {
         let request = WriteRelationshipsRequest {
-            updates: vec![update],
+            updates,
             ..Default::default()
         };
 
@@ -84,7 +97,22 @@ impl AuthZedClient {
             .write_relationships(request)
             .await
             .map_err(|e| AuthzedError::PutRelationshipError { msg: e.to_string() })?;
+        Ok(())
+    }
 
+    pub async fn put_relationship(
+        &mut self,
+        relationship_update: RelationshipUpdate,
+    ) -> Result<(), AuthzedError> {
+        let request = WriteRelationshipsRequest {
+            updates: vec![relationship_update],
+            ..Default::default()
+        };
+
+        self.permissions
+            .write_relationships(request)
+            .await
+            .map_err(|e| AuthzedError::PutRelationshipError { msg: e.to_string() })?;
         Ok(())
     }
 }
