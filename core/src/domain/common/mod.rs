@@ -1,4 +1,5 @@
 use thiserror::Error;
+pub mod service;
 
 #[derive(Debug, Error)]
 pub enum CoreError {
