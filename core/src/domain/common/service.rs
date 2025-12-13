@@ -1,5 +1,6 @@
 use crate::domain::server::port::ServerRepository;
 
+#[derive(Clone)]
 pub struct Service<S>
 where
     S: ServerRepository,
