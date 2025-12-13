@@ -4,6 +4,7 @@ use crate::{
 };
 pub mod entities;
 
+#[derive(Clone)]
 pub struct AuthzedServerRepository {
     pub authzed_client: AuthZedClient,
 }
