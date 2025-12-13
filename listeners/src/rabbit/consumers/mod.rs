@@ -1,5 +1,5 @@
 use authz_core::application::{AuthzRepositories, AuthzService};
-
+pub mod pool;
 #[derive(Clone)]
 pub struct AppState {
     // Add shared state here

@@ -1,7 +1,6 @@
 use lapin::{Channel, Connection, Consumer, options::BasicConsumeOptions, types::FieldTable};
 use prost::Message;
 use thiserror::Error;
-use tokio::task::JoinHandle;
 use tokio_stream::StreamExt;
 
 use crate::rabbit::consumers::AppState;
@@ -18,6 +17,7 @@ pub struct RabbitClientConfig {
 }
 
 pub type QueueName = String;
+pub type MessageHandler<M, E> = fn(AppState, M) -> Result<(), E>;
 
 #[derive(Debug, Error)]
 pub enum RabbitClientError {
@@ -64,54 +64,52 @@ impl RabbitClient {
         &self,
         app_state: AppState,
         queue_name: String,
-        handler: fn(AppState, M) -> Result<(), E>,
-    ) -> Result<JoinHandle<QueueName>, RabbitClientError>
+        handler: MessageHandler<M, E>,
+    ) -> Result<(), RabbitClientError>
     where
         M: Message + Default + 'static,
         E: std::error::Error + Send + Sync + 'static,
     {
-        let mut consumer = self.create_consumer(queue_name).await?;
-        let consumer_thread_handler = tokio::spawn(async move {
-            while let Some(message) = consumer.next().await {
-                let lapin_delivery = match message {
-                    Ok(delivery) => delivery,
-                    Err(_) => {
-                        // TODO: log error
-                        // Failed to extract message
-                        continue;
-                    }
-                };
-                let content = match M::decode(&lapin_delivery.data[..]) {
-                    Ok(content) => content,
-                    Err(_) => {
-                        // TODO: log error
-                        // Failed to decode message
-                        continue;
-                    }
-                };
-                let process_result = handler(app_state.clone(), content);
-                if process_result.is_ok() {
-                    match lapin_delivery
-                        .ack(lapin::options::BasicAckOptions::default())
-                        .await
-                    {
-                        Ok(_) => {
-                            continue;
-                        }
-                        Err(_) => {
-                            // log error
-                            // Failed to ack message
-                            continue;
-                        }
-                    };
-                } else {
-                    // log info
-                    // Handler returned error, not acknowledging message
+        let mut consumer = self.create_consumer(queue_name.clone()).await?;
+
+        while let Some(message) = consumer.next().await {
+            let lapin_delivery = match message {
+                Ok(delivery) => delivery,
+                Err(_) => {
+                    // TODO: log error
+                    // Failed to extract message
                     continue;
                 }
+            };
+            let content = match M::decode(&lapin_delivery.data[..]) {
+                Ok(content) => content,
+                Err(_) => {
+                    // TODO: log error
+                    // Failed to decode message
+                    continue;
+                }
+            };
+            let process_result = handler(app_state.clone(), content);
+            if process_result.is_ok() {
+                match lapin_delivery
+                    .ack(lapin::options::BasicAckOptions::default())
+                    .await
+                {
+                    Ok(_) => {
+                        continue;
+                    }
+                    Err(_) => {
+                        // log error
+                        // Failed to ack message
+                        continue;
+                    }
+                };
+            } else {
+                // log info
+                // Handler returned error, not acknowledging message
+                continue;
             }
-            consumer.queue().to_string()
-        });
-        Ok(consumer_thread_handler)
+        }
+        Ok(())
     }
 }
