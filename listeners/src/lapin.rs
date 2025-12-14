@@ -1,5 +1,7 @@
 use std::convert::Infallible;
+use std::future::Future;
 
+use clap::Parser;
 use lapin::{Channel, Connection, Consumer, options::BasicConsumeOptions, types::FieldTable};
 use prost::Message;
 use thiserror::Error;
@@ -11,13 +13,46 @@ pub struct RabbitClient {
     consumer_tag_suffix: String,
 }
 
+#[derive(Clone, Parser, Debug, Default)]
 pub struct RabbitClientConfig {
+    #[arg(long = "rabbit-uri", env = "RABBIT_URI", default_value = "localhost")]
     pub uri: String,
+    #[arg(
+        long = "rabbit-consumer-tag-suffix",
+        env = "RABBIT_CONSUMER_TAG_SUFFIX",
+        default_value = "default"
+    )]
     pub consumer_tag_suffix: String,
 }
 
 pub type QueueName = String;
-pub type MessageHandler<S, M> = fn(S, M) -> Result<(), Infallible>;
+
+pub trait MessageHandler<S, M>: Send + Sync {
+    type Future: Future<Output = Result<(), Infallible>> + Send;
+    fn handle(&self, state: S, message: M) -> Self::Future;
+}
+
+impl<S, M, F, Fut> MessageHandler<S, M> for F
+where
+    F: Fn(S, M) -> Fut + Send + Sync,
+    Fut: Future<Output = Result<(), Infallible>> + Send,
+{
+    type Future = Fut;
+    fn handle(&self, state: S, message: M) -> Self::Future {
+        self(state, message)
+    }
+}
+
+impl<S, M, H> MessageHandler<S, M> for std::sync::Arc<H>
+where
+    H: MessageHandler<S, M> + ?Sized,
+    S: Clone,
+{
+    type Future = H::Future;
+    fn handle(&self, state: S, message: M) -> Self::Future {
+        (**self).handle(state, message)
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum RabbitClientError {
@@ -60,15 +95,16 @@ impl RabbitClient {
             .map_err(|e| RabbitClientError::StartupError { msg: e.to_string() })
     }
 
-    pub async fn consume_messages<S, M>(
+    pub async fn consume_messages<S, M, H>(
         &self,
         state: S,
         queue_name: String,
-        handler: MessageHandler<S, M>,
+        handler: H,
     ) -> Result<(), RabbitClientError>
     where
         M: Message + Default + 'static,
         S: Clone + Send + Sync + 'static,
+        H: MessageHandler<S, M>,
     {
         let mut consumer = self.create_consumer(queue_name.clone()).await?;
 
@@ -89,7 +125,7 @@ impl RabbitClient {
                     continue;
                 }
             };
-            let process_result = handler(state.clone(), content);
+            let process_result = handler.handle(state.clone(), content).await;
             if process_result.is_ok() {
                 match lapin_delivery
                     .ack(lapin::options::BasicAckOptions::default())
