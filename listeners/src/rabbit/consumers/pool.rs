@@ -2,6 +2,7 @@ use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use prost::Message;
 use tokio::task::JoinSet;
+use tracing::{debug, info, instrument};
 
 use crate::lapin::{MessageHandler, RabbitClient};
 
@@ -36,8 +37,14 @@ where
         let queue_name = self.queue_name.clone();
         let handler = self.handler.clone();
 
+        info!(queue_name = %queue_name, "Spawning consumer task");
+
         join_set.spawn(async move {
-            let _ = lapin.consume_messages(state, queue_name, handler).await;
+            debug!(queue_name = %queue_name, "Consumer task started");
+            let _ = lapin
+                .consume_messages(state, queue_name.clone(), handler)
+                .await;
+            info!(queue_name = %queue_name, "Consumer task ended");
         });
     }
 
@@ -116,15 +123,22 @@ where
     }
 
     // Spawn all consumers
+    #[instrument(skip_all, fields(consumer_count = self.spawners.len()))]
     pub(crate) fn spawn_all(
         self,
         lapin: Arc<RabbitClient>,
         state: Arc<S>,
         join_set: &mut JoinSet<()>,
     ) {
-        for (_, spawner) in self.spawners.into_iter() {
+        info!(
+            consumer_count = self.spawners.len(),
+            "Spawning all consumers"
+        );
+        for (queue_name, spawner) in self.spawners.into_iter() {
+            debug!(queue_name = %queue_name, "Spawning consumer");
             spawner.spawn(Arc::clone(&lapin), Arc::clone(&state), join_set);
         }
+        info!("All consumers spawned successfully");
     }
 }
 
@@ -170,14 +184,21 @@ where
         self.consumers.count()
     }
 
+    #[instrument(skip_all, fields(consumer_count = self.consumers.count()))]
     pub async fn start(self) {
+        info!(
+            consumer_count = self.consumers.count(),
+            "Starting consumer pool"
+        );
         let mut join_set = JoinSet::new();
 
         // Spawn all consumers using the Consumers method
         self.consumers
             .spawn_all(self.lapin, self.state, &mut join_set);
 
+        info!("Waiting for all consumer tasks to complete");
         // Wait for all tasks to complete
         join_set.join_all().await;
+        info!("All consumer tasks completed");
     }
 }

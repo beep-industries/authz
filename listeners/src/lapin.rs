@@ -6,6 +6,7 @@ use lapin::{Channel, Connection, Consumer, options::BasicConsumeOptions, types::
 use prost::Message;
 use thiserror::Error;
 use tokio_stream::StreamExt;
+use tracing::{debug, error, info, instrument, warn};
 
 pub struct RabbitClient {
     connection: Connection,
@@ -61,14 +62,24 @@ pub enum RabbitClientError {
 }
 
 impl RabbitClient {
+    #[instrument(skip_all, fields(uri = %config.uri, consumer_tag_suffix = %config.consumer_tag_suffix))]
     pub async fn new(config: RabbitClientConfig) -> Result<Self, RabbitClientError> {
+        info!("Connecting to RabbitMQ");
         let connection = Connection::connect(&config.uri, lapin::ConnectionProperties::default())
             .await
-            .map_err(|e| RabbitClientError::StartupError { msg: e.to_string() })?;
-        let channel = connection
-            .create_channel()
-            .await
-            .map_err(|e| RabbitClientError::StartupError { msg: e.to_string() })?;
+            .map_err(|e| {
+                error!("Failed to connect to RabbitMQ: {}", e);
+                RabbitClientError::StartupError { msg: e.to_string() }
+            })?;
+        info!("RabbitMQ connection established");
+
+        debug!("Creating RabbitMQ channel");
+        let channel = connection.create_channel().await.map_err(|e| {
+            error!("Failed to create RabbitMQ channel: {}", e);
+            RabbitClientError::StartupError { msg: e.to_string() }
+        })?;
+        info!("RabbitMQ channel created successfully");
+
         Ok(RabbitClient {
             connection,
             consumer_tag_suffix: config.consumer_tag_suffix,
@@ -76,25 +87,41 @@ impl RabbitClient {
         })
     }
 
+    #[instrument(skip_all)]
     pub async fn shutdown(&self) -> Result<(), RabbitClientError> {
-        self.connection
-            .close(0, "Shutdown")
-            .await
-            .map_err(|e| RabbitClientError::StartupError { msg: e.to_string() })
+        info!("Shutting down RabbitMQ connection");
+        self.connection.close(0, "Shutdown").await.map_err(|e| {
+            error!("Failed to shutdown RabbitMQ connection: {}", e);
+            RabbitClientError::StartupError { msg: e.to_string() }
+        })?;
+        info!("RabbitMQ connection closed");
+        Ok(())
     }
 
+    #[instrument(skip(self), fields(queue_name = %queue_name))]
     async fn create_consumer(&self, queue_name: String) -> Result<Consumer, RabbitClientError> {
-        self.channel
+        let consumer_tag = format!("{}-{}", queue_name, self.consumer_tag_suffix);
+        debug!(consumer_tag = %consumer_tag, "Creating consumer for queue");
+
+        let consumer = self
+            .channel
             .basic_consume(
                 queue_name.as_str(),
-                format!("{}-{}", queue_name, self.consumer_tag_suffix).as_str(),
+                consumer_tag.as_str(),
                 BasicConsumeOptions::default(),
                 FieldTable::default(),
             )
             .await
-            .map_err(|e| RabbitClientError::StartupError { msg: e.to_string() })
+            .map_err(|e| {
+                error!("Failed to create consumer for queue {}: {}", queue_name, e);
+                RabbitClientError::StartupError { msg: e.to_string() }
+            })?;
+
+        info!(queue_name = %queue_name, consumer_tag = %consumer_tag, "Consumer created successfully");
+        Ok(consumer)
     }
 
+    #[instrument(skip(self, state, handler), fields(queue_name = %queue_name))]
     pub async fn consume_messages<S, M, H>(
         &self,
         state: S,
@@ -106,25 +133,37 @@ impl RabbitClient {
         S: Clone + Send + Sync + 'static,
         H: MessageHandler<S, M>,
     {
+        info!(queue_name = %queue_name, "Starting message consumption");
         let mut consumer = self.create_consumer(queue_name.clone()).await?;
+        let mut message_count = 0u64;
 
         while let Some(message) = consumer.next().await {
+            message_count += 1;
+            debug!(queue_name = %queue_name, message_count, "Received message");
+
             let lapin_delivery = match message {
                 Ok(delivery) => delivery,
-                Err(_) => {
-                    // TODO: log error
-                    // Failed to extract message
+                Err(e) => {
+                    error!(queue_name = %queue_name, error = %e, "Failed to extract message from queue");
                     continue;
                 }
             };
+
             let content = match M::decode(&lapin_delivery.data[..]) {
                 Ok(content) => content,
-                Err(_) => {
-                    // TODO: log error
-                    // Failed to decode message
+                Err(e) => {
+                    error!(
+                        queue_name = %queue_name,
+                        error = %e,
+                        delivery_tag = lapin_delivery.delivery_tag,
+                        "Failed to decode message"
+                    );
                     continue;
                 }
             };
+
+            debug!(queue_name = %queue_name, delivery_tag = lapin_delivery.delivery_tag, "Message decoded successfully");
+
             let process_result = handler.handle(state.clone(), content).await;
             if process_result.is_ok() {
                 match lapin_delivery
@@ -132,20 +171,34 @@ impl RabbitClient {
                     .await
                 {
                     Ok(_) => {
+                        debug!(
+                            queue_name = %queue_name,
+                            delivery_tag = lapin_delivery.delivery_tag,
+                            "Message acknowledged successfully"
+                        );
                         continue;
                     }
-                    Err(_) => {
-                        // log error
-                        // Failed to ack message
+                    Err(e) => {
+                        error!(
+                            queue_name = %queue_name,
+                            delivery_tag = lapin_delivery.delivery_tag,
+                            error = %e,
+                            "Failed to acknowledge message"
+                        );
                         continue;
                     }
                 };
             } else {
-                // log info
-                // Handler returned error, not acknowledging message
+                warn!(
+                    queue_name = %queue_name,
+                    delivery_tag = lapin_delivery.delivery_tag,
+                    "Handler returned error, not acknowledging message"
+                );
                 continue;
             }
         }
+
+        warn!(queue_name = %queue_name, total_messages = message_count, "Consumer stream ended");
         Ok(())
     }
 }
