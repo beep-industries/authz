@@ -12,20 +12,6 @@ services:
       - SPICEDB_LOG_LEVEL=debug
     networks:
       - spicedb-network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "grpcurl",
-          "-plaintext",
-          "-d",
-          "{}",
-          "localhost:50051",
-          "grpc.health.v1.Health/Check",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   zed-cli:
     image: authzed/zed:latest-debug
@@ -37,8 +23,7 @@ services:
     networks:
       - spicedb-network
     depends_on:
-      spicedb:
-        condition: service_healthy
+      - spicedb
 
   spicedb-playground:
     image: ghcr.io/authzed/spicedb-playground:latest
@@ -75,10 +60,10 @@ services:
         condition: service_healthy
     command: >
       sh -c "
-        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=create_server durable=true &&
-        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=delete_server durable=true &&
-        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=create_channel durable=true &&
-        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=delete_channel durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=server.create_server durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=server.delete_server durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=channel.create_channel durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=channel.delete_channel durable=true &&
         echo 'All queues created successfully'
       "
     networks:
@@ -86,15 +71,15 @@ services:
     restart: "no"
 
   schema-loader:
-    image: authzed/zed:latest
+    image: authzed/zed:latest-debug
     depends_on:
-      spicedb:
-        condition: service_healthy
-    command: >
-      sh -c "
-        zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed &&
+      - spicedb
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        sleep 5
+        zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed
         echo 'Schema loaded successfully'
-      "
     volumes:
       - ./beep.zed:/beep/beep.zed
     networks:
