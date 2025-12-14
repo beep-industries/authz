@@ -47,6 +47,8 @@ impl Config {
 pub struct QueueConfig {
     /// Server-related queue names
     pub server: ServerQueues,
+    /// Channel-related queue names
+    pub channel: ChannelQueues,
 }
 
 /// Server queue names
@@ -54,6 +56,17 @@ pub struct QueueConfig {
 pub struct ServerQueues {
     /// Queue name for create server operations
     pub create_server: String,
+    /// Queue name for delete server operations
+    pub delete_server: String,
+}
+
+/// Channel queue names
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ChannelQueues {
+    /// Queue name for create channel operations
+    pub create_channel: String,
+    /// Queue name for delete channel operations
+    pub delete_channel: String,
 }
 
 #[cfg(test)]
@@ -68,7 +81,12 @@ mod tests {
         let mut temp_file = NamedTempFile::new().unwrap();
         let json_content = r#"{
             "server": {
-                "create_server": "test_create_server_queue"
+                "create_server": "test_create_server_queue",
+                "delete_server": "test_delete_server_queue"
+            },
+            "channel": {
+                "create_channel": "test_create_channel_queue",
+                "delete_channel": "test_delete_channel_queue"
             }
         }"#;
         temp_file.write_all(json_content.as_bytes()).unwrap();
@@ -95,6 +113,18 @@ mod tests {
         assert_eq!(
             config.queue_config().server.create_server,
             "test_create_server_queue"
+        );
+        assert_eq!(
+            config.queue_config().server.delete_server,
+            "test_delete_server_queue"
+        );
+        assert_eq!(
+            config.queue_config().channel.create_channel,
+            "test_create_channel_queue"
+        );
+        assert_eq!(
+            config.queue_config().channel.delete_channel,
+            "test_delete_channel_queue"
         );
     }
 
@@ -145,11 +175,19 @@ mod tests {
     fn test_deserialize_queue_config() {
         let json = r#"{
             "server": {
-                "create_server": "my_queue"
+                "create_server": "my_queue",
+                "delete_server": "my_delete_queue"
+            },
+            "channel": {
+                "create_channel": "my_create_channel_queue",
+                "delete_channel": "my_delete_channel_queue"
             }
         }"#;
 
         let config: QueueConfig = serde_json::from_str(json).unwrap();
         assert_eq!(config.server.create_server, "my_queue");
+        assert_eq!(config.server.delete_server, "my_delete_queue");
+        assert_eq!(config.channel.create_channel, "my_create_channel_queue");
+        assert_eq!(config.channel.delete_channel, "my_delete_channel_queue");
     }
 }

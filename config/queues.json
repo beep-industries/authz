@@ -1,5 +1,10 @@
 {
   "server": {
-    "create_server": "create_server"
+    "create_server": "create_server",
+    "delete_server": "delete_server"
+  },
+  "channel": {
+    "create_channel": "create_channel",
+    "delete_channel": "delete_channel"
   }
 }

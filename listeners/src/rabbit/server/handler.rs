@@ -1,22 +1,16 @@
 use std::{convert::Infallible, sync::Arc};
 
 use authz_core::domain::server::{
-    entities::CreateServerInput,
-    port::{ServerRepository, ServerService},
+    entities::{CreateServerInput, DeleteServerInput},
+    port::ServerService,
 };
-use events_protobuf::communities_events::CreateServer;
+use events_protobuf::communities_events::{CreateServer, DeleteServer};
 use tracing::{error, info, instrument};
 
 use crate::rabbit::consumers::AppState;
 
 #[instrument(skip(state), fields(server_id = %input.server_id, owner_id = %input.owner_id))]
-pub async fn create_server<S>(
-    state: Arc<AppState<S>>,
-    input: CreateServer,
-) -> Result<(), Infallible>
-where
-    S: ServerRepository,
-{
+pub async fn create_server(state: Arc<AppState>, input: CreateServer) -> Result<(), Infallible> {
     info!(
         server_id = %input.server_id,
         owner_id = %input.owner_id,
@@ -45,6 +39,38 @@ where
                 owner_id = %input.owner_id,
                 error = ?e,
                 "Failed to create server"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[instrument(skip(state), fields(server_id = %input.server_id))]
+pub async fn delete_server(state: Arc<AppState>, input: DeleteServer) -> Result<(), Infallible> {
+    info!(
+        server_id = %input.server_id,
+        "Processing delete server request"
+    );
+
+    match state
+        .clone()
+        .service
+        .delete(DeleteServerInput {
+            server_id: input.server_id.clone(),
+        })
+        .await
+    {
+        Ok(_) => {
+            info!(
+                server_id = %input.server_id,
+                "Successfully deleted server"
+            );
+        }
+        Err(e) => {
+            error!(
+                server_id = %input.server_id,
+                error = ?e,
+                "Failed to delete server"
             );
         }
     }

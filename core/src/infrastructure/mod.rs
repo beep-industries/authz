@@ -1,3 +1,4 @@
 pub mod authzed;
-pub mod server;
+pub mod channel;
 pub mod common;
+pub mod server;

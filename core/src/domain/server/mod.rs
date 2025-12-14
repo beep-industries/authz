@@ -8,5 +8,6 @@ pub mod service;
 pub enum ServerError {
     #[error("Create server error: {msg}")]
     CreateServerError { msg: String },
+    #[error("Delete server error: {msg}")]
+    DeleteServerError { msg: String },
 }
-

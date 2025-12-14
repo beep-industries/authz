@@ -76,7 +76,10 @@ services:
     command: >
       sh -c "
         rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=create_server durable=true &&
-        echo 'Queue create_server created successfully'
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=delete_server durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=create_channel durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=delete_channel durable=true &&
+        echo 'All queues created successfully'
       "
     networks:
       - spicedb-network
