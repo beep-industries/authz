@@ -10,6 +10,8 @@ prost = "0.13"
 prost-types = "0.13"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 thiserror = "2.0.17"
+clap = { version = "4.5.53", features = ["derive"] }
+env = "1.0.1"
 
 
 [build-dependencies]

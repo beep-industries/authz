@@ -3,6 +3,6 @@ use crate::rabbit::{
     server::handler::create_server,
 };
 
-pub fn create_handler() -> Consumers<AppState> {
+pub fn create_server_consumers() -> Consumers<AppState> {
     Consumers::new().add("test", create_server)
 }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use clap::Parser;
 use tokio::sync::RwLock;
 use tonic::transport::Channel;
 
@@ -15,9 +16,14 @@ pub mod entities;
 pub mod error;
 
 /// AuthZed client configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Parser)]
 pub struct AuthZedConfig {
     /// The endpoint URL (e.g., "grpc.authzed.com:443" or "localhost:50051")
+    #[arg(
+        long = "authzed-endpoint",
+        env = "AUTHZED_ENDPOINT",
+        default_value = "localhost"
+    )]
     pub endpoint: String,
 }
 
