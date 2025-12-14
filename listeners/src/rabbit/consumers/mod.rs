@@ -1,13 +1,24 @@
 use authz_core::application::{AuthzRepositories, AuthzService};
+use authz_core::domain::common::service::Service;
+use authz_core::domain::server::port::ServerRepository;
+
 pub mod pool;
+
 #[derive(Clone)]
-pub struct AppState {
+pub struct AppState<
+    S = authz_core::infrastructure::server::repository::authzed::AuthzedServerRepository,
+> where
+    S: ServerRepository,
+{
     // Add shared state here
-    pub service: AuthzService,
+    pub service: Service<S>,
 }
 
-impl AppState {
-    pub fn new(service: AuthzService) -> Self {
+impl<S> AppState<S>
+where
+    S: ServerRepository,
+{
+    pub fn new(service: Service<S>) -> Self {
         Self { service }
     }
 }
