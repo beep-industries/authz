@@ -1,9 +1,9 @@
+use std::convert::Infallible;
+
 use lapin::{Channel, Connection, Consumer, options::BasicConsumeOptions, types::FieldTable};
 use prost::Message;
 use thiserror::Error;
 use tokio_stream::StreamExt;
-
-use crate::rabbit::consumers::AppState;
 
 pub struct RabbitClient {
     connection: Connection,
@@ -17,7 +17,7 @@ pub struct RabbitClientConfig {
 }
 
 pub type QueueName = String;
-pub type MessageHandler<M, E> = fn(AppState, M) -> Result<(), E>;
+pub type MessageHandler<S, M> = fn(S, M) -> Result<(), Infallible>;
 
 #[derive(Debug, Error)]
 pub enum RabbitClientError {
@@ -60,15 +60,15 @@ impl RabbitClient {
             .map_err(|e| RabbitClientError::StartupError { msg: e.to_string() })
     }
 
-    pub async fn consume_messages<M, E>(
+    pub async fn consume_messages<S, M>(
         &self,
-        app_state: AppState,
+        state: S,
         queue_name: String,
-        handler: MessageHandler<M, E>,
+        handler: MessageHandler<S, M>,
     ) -> Result<(), RabbitClientError>
     where
         M: Message + Default + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+        S: Clone + Send + Sync + 'static,
     {
         let mut consumer = self.create_consumer(queue_name.clone()).await?;
 
@@ -89,7 +89,7 @@ impl RabbitClient {
                     continue;
                 }
             };
-            let process_result = handler(app_state.clone(), content);
+            let process_result = handler(state.clone(), content);
             if process_result.is_ok() {
                 match lapin_delivery
                     .ack(lapin::options::BasicAckOptions::default())
