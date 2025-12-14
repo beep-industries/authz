@@ -56,7 +56,7 @@ impl<T: Into<Relationship> + Clone> Action for T {
     fn create(&self) -> RelationshipUpdate {
         let mut relationship_update: RelationshipUpdate =
             Into::<Relationship>::into(self.clone()).into();
-        relationship_update.operation = Operation::Delete.into();
+        relationship_update.operation = Operation::Create.into();
         relationship_update
     }
 

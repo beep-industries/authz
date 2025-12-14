@@ -1,11 +1,44 @@
 services:
+  spicedb:
+    image: authzed/spicedb:latest
+    command: serve
+    restart: unless-stopped
+    ports:
+      - "50051:50051"
+      - "8443:8443"
+    environment:
+      - SPICEDB_GRPC_PRESHARED_KEY=foobar
+      - SPICEDB_DATASTORE_ENGINE=memory
+      - SPICEDB_LOG_LEVEL=debug
+    networks:
+      - spicedb-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "grpcurl",
+          "-plaintext",
+          "-d",
+          "{}",
+          "localhost:50051",
+          "grpc.health.v1.Health/Check",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   zed-cli:
     image: authzed/zed:latest-debug
-    entrypoint: ["sleep", "infinity"] 
+    entrypoint: ["sleep", "infinity"]
     restart: unless-stopped
     volumes:
       - ./beep.zed:/beep/beep.zed
       - ./validations:/beep/validations
+    networks:
+      - spicedb-network
+    depends_on:
+      spicedb:
+        condition: service_healthy
 
   spicedb-playground:
     image: ghcr.io/authzed/spicedb-playground:latest
@@ -15,7 +48,59 @@ services:
     networks:
       - spicedb-network
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    restart: unless-stopped
+    networks:
+      - spicedb-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq-init:
+    image: rabbitmq:3.13-management-alpine
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: >
+      sh -c "
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=create_server durable=true &&
+        echo 'Queue create_server created successfully'
+      "
+    networks:
+      - spicedb-network
+    restart: "no"
+
+  schema-loader:
+    image: authzed/zed:latest
+    depends_on:
+      spicedb:
+        condition: service_healthy
+    command: >
+      sh -c "
+        zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed &&
+        echo 'Schema loaded successfully'
+      "
+    volumes:
+      - ./beep.zed:/beep/beep.zed
+    networks:
+      - spicedb-network
+    restart: "no"
+
 networks:
   spicedb-network:
     driver: bridge
 
+volumes:
+  rabbitmq_data:
