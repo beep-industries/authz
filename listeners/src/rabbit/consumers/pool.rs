@@ -11,6 +11,7 @@ where
     S: Send + Sync + 'static,
 {
     fn spawn(&self, lapin: Arc<RabbitClient>, state: Arc<S>, join_set: &mut JoinSet<()>);
+    fn clone_box(&self) -> Box<dyn ConsumerSpawner<S>>;
 }
 
 // Concrete implementation for a typed consumer
@@ -39,6 +40,14 @@ where
             let _ = lapin.consume_messages(state, queue_name, handler).await;
         });
     }
+
+    fn clone_box(&self) -> Box<dyn ConsumerSpawner<S>> {
+        Box::new(TypedConsumerSpawner {
+            queue_name: self.queue_name.clone(),
+            handler: self.handler.clone(),
+            _phantom: PhantomData,
+        })
+    }
 }
 
 // Struct to hold consumers independently from RabbitClient
@@ -47,6 +56,20 @@ where
     S: Send + Sync + 'static,
 {
     spawners: HashMap<String, Box<dyn ConsumerSpawner<S>>>,
+}
+
+impl<S> Clone for Consumers<S>
+where
+    S: Send + Sync + 'static,
+{
+    fn clone(&self) -> Self {
+        let spawners = self
+            .spawners
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone_box()))
+            .collect();
+        Self { spawners }
+    }
 }
 
 impl<S> Consumers<S>
@@ -114,6 +137,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct ConsumerPool<S>
 where
     S: Send + Sync + 'static,
