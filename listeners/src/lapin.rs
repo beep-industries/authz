@@ -164,37 +164,30 @@ impl RabbitClient {
 
             debug!(queue_name = %queue_name, delivery_tag = lapin_delivery.delivery_tag, "Message decoded successfully");
 
+            // Process the message - handlers always return Ok(()) even on processing errors
             let process_result = handler.handle(state.clone(), content).await;
-            if process_result.is_ok() {
-                match lapin_delivery
-                    .ack(lapin::options::BasicAckOptions::default())
-                    .await
-                {
-                    Ok(_) => {
-                        debug!(
-                            queue_name = %queue_name,
-                            delivery_tag = lapin_delivery.delivery_tag,
-                            "Message acknowledged successfully"
-                        );
-                        continue;
-                    }
-                    Err(e) => {
-                        error!(
-                            queue_name = %queue_name,
-                            delivery_tag = lapin_delivery.delivery_tag,
-                            error = %e,
-                            "Failed to acknowledge message"
-                        );
-                        continue;
-                    }
-                };
-            } else {
-                warn!(
-                    queue_name = %queue_name,
-                    delivery_tag = lapin_delivery.delivery_tag,
-                    "Handler returned error, not acknowledging message"
-                );
-                continue;
+
+            // Always acknowledge the message to prevent requeuing and poison messages
+            match lapin_delivery
+                .ack(lapin::options::BasicAckOptions::default())
+                .await
+            {
+                Ok(_) => {
+                    debug!(
+                        queue_name = %queue_name,
+                        delivery_tag = lapin_delivery.delivery_tag,
+                        process_result = ?process_result,
+                        "Message processed and acknowledged"
+                    );
+                }
+                Err(e) => {
+                    error!(
+                        queue_name = %queue_name,
+                        delivery_tag = lapin_delivery.delivery_tag,
+                        error = %e,
+                        "Failed to acknowledge message - this may cause redelivery"
+                    );
+                }
             }
         }
 

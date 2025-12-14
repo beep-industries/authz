@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let channel = conn.create_channel().await?;
 
     // Declare the queue (idempotent operation)
-    let queue_name = "create_server";
+    let queue_name = "server.create_server";
     channel
         .queue_declare(
             queue_name,
