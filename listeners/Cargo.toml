@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 authz_core = { path = "../core", package = "core" }
+clap = { version = "4.5.53", features = ["derive", "env"] }
+env = "1.0.1"
 lapin = "3.7.2"
 prost = "0.14.1"
 thiserror = "2.0.17"
