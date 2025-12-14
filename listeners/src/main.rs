@@ -19,6 +19,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::parse();
     tracing::debug!(?config, "Parsed configuration");
 
+    tracing::info!(
+        "Loading queue configuration from {:?}",
+        config.queue_config_path
+    );
+    let config = config.with_queue_config()?;
+    tracing::info!("Queue configuration loaded successfully");
+
     let app = App::new(config).await?;
     tracing::info!("Application initialized successfully");
 

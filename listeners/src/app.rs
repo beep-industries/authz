@@ -32,14 +32,19 @@ impl App {
     pub async fn new(config: Config) -> Result<Self, AppError> {
         info!("Initializing application");
 
+        // Clone queue config to avoid borrow checker issues when moving other fields
+        let queue_config = config.queue_config().clone();
+        let rabbit_config = config.rabbit_config;
+        let authzed_config = config.authzed_config;
+
         debug!("Connecting to RabbitMQ");
-        let rabbit_client = RabbitClient::new(config.rabbit_config)
+        let rabbit_client = RabbitClient::new(rabbit_config)
             .await
             .map_err(|e| AppError::RabbitError(e))?;
         info!("RabbitMQ client connected successfully");
 
         debug!("Creating authorization repositories");
-        let authz_repositories = create_repositories(config.authzed_config)
+        let authz_repositories = create_repositories(authzed_config)
             .await
             .map_err(|e| AppError::RepositoriesCreationError(e))?;
         info!("Authorization repositories created successfully");
@@ -47,7 +52,7 @@ impl App {
         let app_state = AppState::from(authz_repositories);
 
         debug!("Registering consumers");
-        let server_consumers = create_server_consumers();
+        let server_consumers = create_server_consumers(&queue_config.server);
         let consumers = Consumers::new().merge(server_consumers);
         let consumer_count = consumers.count();
         info!(consumer_count, "Registered consumers");
