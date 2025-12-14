@@ -1,16 +1,18 @@
 use crate::domain::{
+    channel::port::ChannelRepository,
     common::service::Service,
     server::{
         ServerError,
-        entities::CreateServerInput,
+        entities::{CreateServerInput, DeleteServerInput},
         port::{ServerRepository, ServerService},
     },
 };
 use tracing::{info, instrument};
 
-impl<S> ServerService for Service<S>
+impl<S, C> ServerService for Service<S, C>
 where
     S: ServerRepository,
+    C: ChannelRepository,
 {
     #[instrument(skip(self), fields(server_id = %input.server_id, owner_id = %input.owner_id))]
     async fn create(&self, input: CreateServerInput) -> Result<(), ServerError> {
@@ -26,11 +28,30 @@ where
         }
         result
     }
+
+    #[instrument(skip(self), fields(server_id = %input.server_id))]
+    async fn delete(&self, input: DeleteServerInput) -> Result<(), ServerError> {
+        info!(
+            server_id = %input.server_id,
+            "Delete server in domain service"
+        );
+        let result = self.server_repository.delete(input).await;
+        match &result {
+            Ok(_) => info!("Server deleted successfully in domain service"),
+            Err(e) => info!(error = ?e, "Failed to delete server in domain service"),
+        }
+        result
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::channel::{
+        ChannelError,
+        entities::{CreateChannelInput, DeleteChannelInput},
+        port::ChannelRepository,
+    };
     use std::sync::{Arc, Mutex};
 
     // Simple mock repository for testing
@@ -79,13 +100,31 @@ mod tests {
                 Ok(())
             }
         }
+
+        async fn delete(&self, _input: DeleteServerInput) -> Result<(), ServerError> {
+            Ok(())
+        }
+    }
+
+    #[derive(Clone)]
+    struct MockChannelRepository;
+
+    impl ChannelRepository for MockChannelRepository {
+        async fn create(&self, _input: CreateChannelInput) -> Result<(), ChannelError> {
+            Ok(())
+        }
+
+        async fn delete(&self, _input: DeleteChannelInput) -> Result<(), ChannelError> {
+            Ok(())
+        }
     }
 
     #[tokio::test]
     async fn test_create_server_success() {
         // Arrange
         let mock_repo = MockServerRepository::new();
-        let service = Service::new(mock_repo.clone());
+        let mock_channel_repo = MockChannelRepository;
+        let service = Service::new(mock_repo.clone(), mock_channel_repo);
 
         let input = CreateServerInput {
             server_id: "server_123".to_string(),
@@ -108,7 +147,8 @@ mod tests {
     async fn test_create_server_failure() {
         // Arrange
         let mock_repo = MockServerRepository::new().with_failure("Database connection failed");
-        let service = Service::new(mock_repo.clone());
+        let mock_channel_repo = MockChannelRepository;
+        let service = Service::new(mock_repo.clone(), mock_channel_repo);
 
         let input = CreateServerInput {
             server_id: "server_123".to_string(),
@@ -133,7 +173,8 @@ mod tests {
     async fn test_create_server_with_different_inputs() {
         // Arrange
         let mock_repo = MockServerRepository::new();
-        let service = Service::new(mock_repo.clone());
+        let mock_channel_repo = MockChannelRepository;
+        let service = Service::new(mock_repo.clone(), mock_channel_repo);
 
         let input = CreateServerInput {
             server_id: "test_server".to_string(),
@@ -156,7 +197,8 @@ mod tests {
         // Arrange
         let error_msg = "Permission denied";
         let mock_repo = MockServerRepository::new().with_failure(error_msg);
-        let service = Service::new(mock_repo);
+        let mock_channel_repo = MockChannelRepository;
+        let service = Service::new(mock_repo, mock_channel_repo);
 
         let input = CreateServerInput {
             server_id: "server_xyz".to_string(),
@@ -180,7 +222,8 @@ mod tests {
     async fn test_create_server_multiple_calls() {
         // Arrange
         let mock_repo = MockServerRepository::new();
-        let service = Service::new(mock_repo.clone());
+        let mock_channel_repo = MockChannelRepository;
+        let service = Service::new(mock_repo.clone(), mock_channel_repo);
 
         // Act - create multiple servers
         let input1 = CreateServerInput {

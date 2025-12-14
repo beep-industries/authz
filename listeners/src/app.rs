@@ -5,11 +5,12 @@ use crate::{
     config::Config,
     lapin::{RabbitClient, RabbitClientError},
     rabbit::{
+        channel::consumers::channel_consumers,
         consumers::{
             AppState,
             pool::{ConsumerPool, Consumers},
         },
-        server::consumers::create_server_consumers,
+        server::consumers::server_consumers,
     },
 };
 
@@ -52,8 +53,11 @@ impl App {
         let app_state = AppState::from(authz_repositories);
 
         debug!("Registering consumers");
-        let server_consumers = create_server_consumers(&queue_config.server);
-        let consumers = Consumers::new().merge(server_consumers);
+        let server_consumers = server_consumers(&queue_config.server);
+        let channel_consumers = channel_consumers(&queue_config.channel);
+        let consumers = Consumers::new()
+            .merge(server_consumers)
+            .merge(channel_consumers);
         let consumer_count = consumers.count();
         info!(consumer_count, "Registered consumers");
 

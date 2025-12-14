@@ -1,6 +1,6 @@
 use crate::{
-    authzed::api::v1::Relationship,
-    domain::server::entities::CreateServerInput,
+    authzed::api::v1::{Relationship, RelationshipFilter},
+    domain::server::entities::{CreateServerInput, DeleteServerInput},
     infrastructure::common::authzed::entities::{Relation, server::Server, user::User},
 };
 
@@ -24,3 +24,14 @@ impl From<CreateServerInput> for Relationship {
     }
 }
 
+impl From<DeleteServerInput> for RelationshipFilter {
+    fn from(input: DeleteServerInput) -> Self {
+        RelationshipFilter {
+            resource_type: "server".to_string(),
+            optional_resource_id: input.server_id,
+            optional_resource_id_prefix: String::new(),
+            optional_relation: String::new(),
+            optional_subject_filter: None,
+        }
+    }
+}

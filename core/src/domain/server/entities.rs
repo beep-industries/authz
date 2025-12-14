@@ -4,3 +4,7 @@ pub struct CreateServerInput {
     pub server_id: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct DeleteServerInput {
+    pub server_id: String,
+}
