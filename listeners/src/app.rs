@@ -28,14 +28,14 @@ pub enum AppError {
 
 impl App {
     pub async fn new(config: Config) -> Result<Self, AppError> {
+        let rabbit_client = RabbitClient::new(config.rabbit_config)
+            .await
+            .map_err(|e| AppError::RabbitError(e))?;
         let authz_repositories = create_repositories(config.authzed_config)
             .await
             .map_err(|e| AppError::RepositoriesCreationError(e))?;
         let app_state = AppState::from(authz_repositories);
         // let app_state = AppState::from(config.authz_repositories);
-        let rabbit_client = RabbitClient::new(config.rabbit_config)
-            .await
-            .map_err(|e| AppError::RabbitError(e))?;
         let server_consumers = create_server_consumers();
         let consumers = Consumers::new().merge(server_consumers);
         let consumer_pool: ConsumerPool<AppState> =

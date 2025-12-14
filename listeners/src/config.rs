@@ -3,7 +3,7 @@ use clap::{Parser, command};
 
 use crate::lapin::RabbitClientConfig;
 
-#[derive(Clone, Parser, Debug, Default)]
+#[derive(Clone, Parser, Debug)]
 #[command(name = "communities-api")]
 #[command(about = "Communities API Server", long_about = None)]
 pub struct Config {
