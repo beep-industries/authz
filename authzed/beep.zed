@@ -212,13 +212,15 @@ definition channel {
 
     /**
      * send_message_grant indicates explicit permission grants for sending messages
+     * Can come from users, roles, or permission_override objects
      */
-    relation send_message_grant: user | role#member
+    relation send_message_grant: user | role#member | permission_override#granted_to
 
     /**
      * send_message_deny indicates explicit permission denies for sending messages
+     * Can come from users, roles, or permission_override objects
      */
-    relation send_message_deny: user | role#member
+    relation send_message_deny: user | role#member | permission_override#denied_to
 
     /**
      * send_message indicates permission to send messages in the channel
@@ -228,13 +230,15 @@ definition channel {
 
     /**
      * view_channel_grant indicates explicit permission grants for viewing the channel
+     * Can come from users, roles, or permission_override objects
      */
-    relation view_channel_grant: user | role#member
+    relation view_channel_grant: user | role#member | permission_override#granted_to
 
     /**
      * view_channel_deny indicates explicit permission denies for viewing the channel
+     * Can come from users, roles, or permission_override objects
      */
-    relation view_channel_deny: user | role#member
+    relation view_channel_deny: user | role#member | permission_override#denied_to
 
     /**
      * view indicates permission to view the channel
@@ -244,13 +248,15 @@ definition channel {
 
     /**
      * manage_message_grant indicates explicit permission grants for managing messages
+     * Can come from users, roles, or permission_override objects
      */
-    relation manage_message_grant: user | role#member
+    relation manage_message_grant: user | role#member | permission_override#granted_to
 
     /**
      * manage_message_deny indicates explicit permission denies for managing messages
+     * Can come from users, roles, or permission_override objects
      */
-    relation manage_message_deny: user | role#member
+    relation manage_message_deny: user | role#member | permission_override#denied_to
 
     /**
      * manage_message indicates permission to manage (delete other) messages in the channel
@@ -260,13 +266,15 @@ definition channel {
 
     /**
      * attach_files_grant indicates explicit permission grants for attaching files
+     * Can come from users, roles, or permission_override objects
      */
-    relation attach_files_grant: user | role#member
+    relation attach_files_grant: user | role#member | permission_override#granted_to
 
     /**
      * attach_files_deny indicates explicit permission denies for attaching files
+     * Can come from users, roles, or permission_override objects
      */
-    relation attach_files_deny: user | role#member
+    relation attach_files_deny: user | role#member | permission_override#denied_to
 
     /**
      * attach_files indicates permission to attach files to messages in the channel
@@ -276,17 +284,49 @@ definition channel {
 
     /**
      * manage_webhooks_grant indicates explicit permission grants for managing webhooks
+     * Can come from users, roles, or permission_override objects
      */
-    relation manage_webhooks_grant: user | role#member
+    relation manage_webhooks_grant: user | role#member | permission_override#granted_to
 
     /**
      * manage_webhooks_deny indicates explicit permission denies for managing webhooks
+     * Can come from users, roles, or permission_override objects
      */
-    relation manage_webhooks_deny: user | role#member
+    relation manage_webhooks_deny: user | role#member | permission_override#denied_to
 
     /**
      * manage_webhooks indicates permission to manage webhooks in the channel
      * Denies take precedence over grants
      */
     permission manage_webhooks = (server->manage_webhooks + manage_webhooks_grant) - manage_webhooks_deny
+}
+
+/**
+ * permission_override represents a stored permission override for tracking and deletion
+ * The permission_override object itself is linked to channel grant/deny relations
+ * This allows us to delete all related permissions by deleting the override object
+ */
+definition permission_override {
+    /**
+     * channel indicates which channel this override applies to
+     */
+    relation channel: channel
+
+    /**
+     * granted_to indicates the user or role that receives the grant permission
+     * This is set when the override action is ALLOW
+     */
+    relation granted_to: user | role#member
+
+    /**
+     * denied_to indicates the user or role that receives the deny permission
+     * This is set when the override action is DENY
+     */
+    relation denied_to: user | role#member
+
+    /**
+     * view indicates permission to view this override's details
+     * Note: Simplified because nested arrows (channel->server->admin) are not yet supported
+     */
+    permission view = granted_to + denied_to
 }
