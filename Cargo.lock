@@ -327,6 +327,7 @@ dependencies = [
  "env",
  "futures",
  "mockall",
+ "permission-translation",
  "prost 0.13.5",
  "prost-types 0.13.5",
  "thiserror",

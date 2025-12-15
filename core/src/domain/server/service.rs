@@ -1,6 +1,8 @@
 use crate::domain::{
     channel::port::ChannelRepository,
     common::service::Service,
+    permission_override::port::PermissionOverrideRepository,
+    role::port::RoleRepository,
     server::{
         ServerError,
         entities::{CreateServerInput, DeleteServerInput},
@@ -9,10 +11,12 @@ use crate::domain::{
 };
 use tracing::{info, instrument};
 
-impl<S, C> ServerService for Service<S, C>
+impl<S, C, R, P> ServerService for Service<S, C, R, P>
 where
     S: ServerRepository,
     C: ChannelRepository,
+    R: RoleRepository,
+    P: PermissionOverrideRepository,
 {
     #[instrument(skip(self), fields(server_id = %input.server_id, owner_id = %input.owner_id))]
     async fn create(&self, input: CreateServerInput) -> Result<(), ServerError> {
@@ -47,10 +51,22 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::channel::{
-        ChannelError,
-        entities::{CreateChannelInput, DeleteChannelInput},
-        port::ChannelRepository,
+    use crate::domain::{
+        channel::{
+            ChannelError,
+            entities::{CreateChannelInput, DeleteChannelInput},
+            port::ChannelRepository,
+        },
+        permission_override::{
+            PermissionOverrideError,
+            entities::{CreatePermissionOverrideInput, DeletePermissionOverrideInput},
+            port::PermissionOverrideRepository,
+        },
+        role::{
+            RoleError,
+            entities::{AssignMemberInput, CreateRoleInput, DeleteRoleInput, RemoveMemberInput},
+            port::RoleRepository,
+        },
     };
     use std::sync::{Arc, Mutex};
 
@@ -119,12 +135,57 @@ mod tests {
         }
     }
 
+    #[derive(Clone)]
+    struct MockRoleRepository;
+
+    impl RoleRepository for MockRoleRepository {
+        async fn create(&self, _input: CreateRoleInput) -> Result<(), RoleError> {
+            Ok(())
+        }
+
+        async fn delete(&self, _input: DeleteRoleInput) -> Result<(), RoleError> {
+            Ok(())
+        }
+
+        async fn assign_member(&self, _input: AssignMemberInput) -> Result<(), RoleError> {
+            Ok(())
+        }
+
+        async fn remove_member(&self, _input: RemoveMemberInput) -> Result<(), RoleError> {
+            Ok(())
+        }
+    }
+
+    #[derive(Clone)]
+    struct MockPermissionOverrideRepository;
+
+    impl PermissionOverrideRepository for MockPermissionOverrideRepository {
+        async fn create(
+            &self,
+            _input: CreatePermissionOverrideInput,
+        ) -> Result<(), PermissionOverrideError> {
+            Ok(())
+        }
+
+        async fn delete(
+            &self,
+            _input: DeletePermissionOverrideInput,
+        ) -> Result<(), PermissionOverrideError> {
+            Ok(())
+        }
+    }
+
     #[tokio::test]
     async fn test_create_server_success() {
         // Arrange
         let mock_repo = MockServerRepository::new();
         let mock_channel_repo = MockChannelRepository;
-        let service = Service::new(mock_repo.clone(), mock_channel_repo);
+        let service = Service::new(
+            mock_repo.clone(),
+            mock_channel_repo,
+            MockRoleRepository,
+            MockPermissionOverrideRepository,
+        );
 
         let input = CreateServerInput {
             server_id: "server_123".to_string(),
@@ -148,7 +209,12 @@ mod tests {
         // Arrange
         let mock_repo = MockServerRepository::new().with_failure("Database connection failed");
         let mock_channel_repo = MockChannelRepository;
-        let service = Service::new(mock_repo.clone(), mock_channel_repo);
+        let service = Service::new(
+            mock_repo.clone(),
+            mock_channel_repo,
+            MockRoleRepository,
+            MockPermissionOverrideRepository,
+        );
 
         let input = CreateServerInput {
             server_id: "server_123".to_string(),
@@ -174,7 +240,12 @@ mod tests {
         // Arrange
         let mock_repo = MockServerRepository::new();
         let mock_channel_repo = MockChannelRepository;
-        let service = Service::new(mock_repo.clone(), mock_channel_repo);
+        let service = Service::new(
+            mock_repo.clone(),
+            mock_channel_repo,
+            MockRoleRepository,
+            MockPermissionOverrideRepository,
+        );
 
         let input = CreateServerInput {
             server_id: "test_server".to_string(),
@@ -198,7 +269,12 @@ mod tests {
         let error_msg = "Permission denied";
         let mock_repo = MockServerRepository::new().with_failure(error_msg);
         let mock_channel_repo = MockChannelRepository;
-        let service = Service::new(mock_repo, mock_channel_repo);
+        let service = Service::new(
+            mock_repo,
+            mock_channel_repo,
+            MockRoleRepository,
+            MockPermissionOverrideRepository,
+        );
 
         let input = CreateServerInput {
             server_id: "server_xyz".to_string(),
@@ -223,7 +299,12 @@ mod tests {
         // Arrange
         let mock_repo = MockServerRepository::new();
         let mock_channel_repo = MockChannelRepository;
-        let service = Service::new(mock_repo.clone(), mock_channel_repo);
+        let service = Service::new(
+            mock_repo.clone(),
+            mock_channel_repo,
+            MockRoleRepository,
+            MockPermissionOverrideRepository,
+        );
 
         // Act - create multiple servers
         let input1 = CreateServerInput {
