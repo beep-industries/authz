@@ -1402,6 +1402,7 @@ dependencies = [
  "env",
  "events-protobuf",
  "lapin",
+ "permission-translation",
  "prost 0.14.1",
  "serde",
  "serde_json",
@@ -1684,6 +1685,12 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
+
+[[package]]
+name = "permission-translation"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a57e59a10189a1ace67da6c2c555cf51b1bb2a697b781c3f019c744a283d63"
 
 [[package]]
 name = "petgraph"

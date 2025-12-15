@@ -1,0 +1,32 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user
+
+  role:member#server@server:test_server
+  role:member#member@user:regular_user
+
+  // Administrator permission assignment
+  server:test_server#administrator@role:admin#member
+
+assertions:
+  assertTrue:
+    # Owner always has admin permission
+    - server:test_server#admin@user:owner
+
+    # Admin role has administrator permission
+    - server:test_server#admin@user:admin_user
+
+  assertFalse:
+    # Moderator does not have administrator permission
+    - server:test_server#admin@user:mod_user
+
+    # Regular member does not have administrator permission
+    - server:test_server#admin@user:regular_user
