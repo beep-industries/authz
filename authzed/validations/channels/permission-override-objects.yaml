@@ -1,0 +1,67 @@
+schemaFile: "../../beep.zed"
+relationships: |-
+  // Server setup
+  server:test_server#owner@user:owner
+
+  // Roles setup
+  role:admin#server@server:test_server
+  role:admin#member@user:admin_user
+
+  role:moderator#server@server:test_server
+  role:moderator#member@user:mod_user
+
+  role:basic#server@server:test_server
+  role:basic#member@user:basic_user1
+  role:basic#member@user:basic_user2
+
+  // Channel setup
+  channel:override_test#server@server:test_server
+
+  // Base permissions - only admins can send by default
+  server:test_server#message_sender@role:admin#member
+
+  // Override scenarios using permission_override objects
+
+  // Override 1: Grant moderator role permission via permission_override object
+  permission_override:override_1#channel@channel:override_test
+  permission_override:override_1#granted_to@role:moderator#member
+  channel:override_test#send_message_grant@permission_override:override_1#granted_to
+
+  // Override 2: Grant specific user (basic_user1) via permission_override object
+  permission_override:override_2#channel@channel:override_test
+  permission_override:override_2#granted_to@user:basic_user1
+  channel:override_test#send_message_grant@permission_override:override_2#granted_to
+
+  // Override 3: Deny admin user via permission_override object (deny overrides server role)
+  permission_override:override_3#channel@channel:override_test
+  permission_override:override_3#denied_to@user:admin_user
+  channel:override_test#send_message_deny@permission_override:override_3#denied_to
+
+  // Override 4: Multiple permissions in one override (view and send for basic_user2)
+  permission_override:override_4#channel@channel:override_test
+  permission_override:override_4#granted_to@user:basic_user2
+  channel:override_test#send_message_grant@permission_override:override_4#granted_to
+  channel:override_test#view_channel_grant@permission_override:override_4#granted_to
+
+assertions:
+  assertTrue:
+    # Owner has all permissions
+    - channel:override_test#send_message@user:owner
+    - channel:override_test#view@user:owner
+
+    # Moderator granted via permission_override object
+    - channel:override_test#send_message@user:mod_user
+
+    # Basic user 1 granted via permission_override object
+    - channel:override_test#send_message@user:basic_user1
+
+    # Basic user 2 has both send and view via permission_override object
+    - channel:override_test#send_message@user:basic_user2
+    - channel:override_test#view@user:basic_user2
+
+  assertFalse:
+    # Admin user denied via permission_override object (overrides server role permission)
+    - channel:override_test#send_message@user:admin_user
+
+    # Moderator has send but not view (only send was granted)
+    - channel:override_test#view@user:mod_user

@@ -37,8 +37,22 @@ impl RoleRepository for AuthzedRoleRepository {
             role_id = %input.role_id,
             server_id = %input.server_id,
             permissions_bitmask = %input.permissions_bitmask,
-            "Creating role relationships in AuthZed"
+            "Creating/updating role relationships in AuthZed"
         );
+
+        // First, delete all existing server permission relations for this role (for update semantics)
+        // This ensures we replace permissions instead of merging them
+        info!(
+            role_id = %input.role_id,
+            "Deleting existing server permission relationships for role"
+        );
+        let subject_filter = entities::create_role_subject_filter(&DeleteRoleInput {
+            role_id: input.role_id.clone(),
+        });
+        self.authzed_client
+            .filtered_delete(subject_filter)
+            .await
+            .map_err(|e| RoleError::CreateRoleError { msg: e.to_string() })?;
 
         // Convert input to relationship updates
         let updates = entities::create_role_to_updates(&input, &self.permissions_descriptor);
@@ -62,7 +76,7 @@ impl RoleRepository for AuthzedRoleRepository {
                 .map_err(|e| RoleError::CreateRoleError { msg: e.to_string() })?;
         }
 
-        info!("Role relationships created successfully in AuthZed");
+        info!("Role relationships created/updated successfully in AuthZed");
         Ok(())
     }
 
