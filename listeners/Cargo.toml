@@ -18,6 +18,7 @@ events-protobuf = { git = "https://github.com/beep-industries/events-protobuf.gi
 dotenv = "0.15.0"
 tracing = "0.1.43"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+permission-translation = "0.3.0"
 
 [dev-dependencies]
 tempfile = "3.8"
