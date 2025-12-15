@@ -6,5 +6,15 @@
   "channel": {
     "create_channel": "channel.create_channel",
     "delete_channel": "channel.delete_channel"
+  },
+  "role": {
+    "upsert_role": "role.upsert_role",
+    "delete_role": "role.delete_role",
+    "member_assigned_to_role": "role.member_assigned_to_role",
+    "member_removed_from_role": "role.member_removed_from_role"
+  },
+  "permission_override": {
+    "upsert_permission_override": "permission_override.upsert_permission_override",
+    "delete_permission_override": "permission_override.delete_permission_override"
   }
 }

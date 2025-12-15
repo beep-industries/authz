@@ -4,12 +4,15 @@ use tracing::{debug, info, instrument};
 use crate::{
     config::Config,
     lapin::{RabbitClient, RabbitClientError},
+    permissions_translations::BeepPermissions,
     rabbit::{
         channel::consumers::channel_consumers,
         consumers::{
             AppState,
             pool::{ConsumerPool, Consumers},
         },
+        permission_override::consumers::permission_override_consumers,
+        role::consumers::role_consumers,
         server::consumers::server_consumers,
     },
 };
@@ -44,8 +47,12 @@ impl App {
             .map_err(|e| AppError::RabbitError(e))?;
         info!("RabbitMQ client connected successfully");
 
+        debug!("Creating permissions descriptor");
+        let permissions_descriptor = BeepPermissions::new().descriptor();
+        info!("Permissions descriptor created successfully");
+
         debug!("Creating authorization repositories");
-        let authz_repositories = create_repositories(authzed_config)
+        let authz_repositories = create_repositories(authzed_config, permissions_descriptor)
             .await
             .map_err(|e| AppError::RepositoriesCreationError(e))?;
         info!("Authorization repositories created successfully");
@@ -55,9 +62,14 @@ impl App {
         debug!("Registering consumers");
         let server_consumers = server_consumers(&queue_config.server);
         let channel_consumers = channel_consumers(&queue_config.channel);
+        let role_consumers = role_consumers(&queue_config.role);
+        let permission_override_consumers =
+            permission_override_consumers(&queue_config.permission_override);
         let consumers = Consumers::new()
             .merge(server_consumers)
-            .merge(channel_consumers);
+            .merge(channel_consumers)
+            .merge(role_consumers)
+            .merge(permission_override_consumers);
         let consumer_count = consumers.count();
         info!(consumer_count, "Registered consumers");
 

@@ -64,6 +64,12 @@ services:
         rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=server.delete_server durable=true &&
         rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=channel.create_channel durable=true &&
         rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=channel.delete_channel durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=role.upsert_role durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=role.delete_role durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=role.member_assigned_to_role durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=role.member_removed_from_role durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=permission_override.upsert_permission_override durable=true &&
+        rabbitmqadmin -H rabbitmq -u guest -p guest declare queue name=permission_override.delete_permission_override durable=true &&
         echo 'All queues created successfully'
       "
     networks:

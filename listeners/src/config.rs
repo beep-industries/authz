@@ -49,6 +49,10 @@ pub struct QueueConfig {
     pub server: ServerQueues,
     /// Channel-related queue names
     pub channel: ChannelQueues,
+    /// Role-related queue names
+    pub role: RoleQueues,
+    /// Permission override-related queue names
+    pub permission_override: PermissionOverrideQueues,
 }
 
 /// Server queue names
@@ -69,6 +73,28 @@ pub struct ChannelQueues {
     pub delete_channel: String,
 }
 
+/// Role queue names
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RoleQueues {
+    /// Queue name for upsert role operations
+    pub upsert_role: String,
+    /// Queue name for delete role operations
+    pub delete_role: String,
+    /// Queue name for member assigned to role operations
+    pub member_assigned_to_role: String,
+    /// Queue name for member removed from role operations
+    pub member_removed_from_role: String,
+}
+
+/// Permission override queue names
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PermissionOverrideQueues {
+    /// Queue name for upsert permission override operations
+    pub upsert_permission_override: String,
+    /// Queue name for delete permission override operations
+    pub delete_permission_override: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -87,6 +113,16 @@ mod tests {
             "channel": {
                 "create_channel": "test_create_channel_queue",
                 "delete_channel": "test_delete_channel_queue"
+            },
+            "role": {
+                "upsert_role": "test_upsert_role_queue",
+                "delete_role": "test_delete_role_queue",
+                "member_assigned_to_role": "test_member_assigned_to_role_queue",
+                "member_removed_from_role": "test_member_removed_from_role_queue"
+            },
+            "permission_override": {
+                "upsert_permission_override": "test_upsert_permission_override_queue",
+                "delete_permission_override": "test_delete_permission_override_queue"
             }
         }"#;
         temp_file.write_all(json_content.as_bytes()).unwrap();
@@ -181,6 +217,16 @@ mod tests {
             "channel": {
                 "create_channel": "my_create_channel_queue",
                 "delete_channel": "my_delete_channel_queue"
+            },
+            "role": {
+                "upsert_role": "my_upsert_role_queue",
+                "delete_role": "my_delete_role_queue",
+                "member_assigned_to_role": "my_member_assigned_to_role_queue",
+                "member_removed_from_role": "my_member_removed_from_role_queue"
+            },
+            "permission_override": {
+                "upsert_permission_override": "my_upsert_permission_override_queue",
+                "delete_permission_override": "my_delete_permission_override_queue"
             }
         }"#;
 
