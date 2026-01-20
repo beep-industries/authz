@@ -1,20 +1,20 @@
 {
   "server": {
-    "create_server": "server.create_server",
-    "delete_server": "server.delete_server"
+    "create_server": "create.server.queue",
+    "delete_server": "delete.server.queue"
   },
   "channel": {
-    "create_channel": "channel.create_channel",
-    "delete_channel": "channel.delete_channel"
+    "create_channel": "create.channel.queue",
+    "delete_channel": "delete.channel.queue"
   },
   "role": {
-    "upsert_role": "role.upsert_role",
-    "delete_role": "role.delete_role",
-    "member_assigned_to_role": "role.member_assigned_to_role",
-    "member_removed_from_role": "role.member_removed_from_role"
+    "upsert_role": "role.upsert.queue",
+    "delete_role": "role.delete.queue",
+    "member_assigned_to_role": "member.assign.role.queue",
+    "member_removed_from_role": "member.unassign.role.queue"
   },
   "permission_override": {
-    "upsert_permission_override": "permission_override.upsert_permission_override",
-    "delete_permission_override": "permission_override.delete_permission_override"
+    "upsert_permission_override": "permission_override.upsert_permission_override.queue",
+    "delete_permission_override": "permission_override.delete_permission_override.queue"
   }
 }

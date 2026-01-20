@@ -1,0 +1,75 @@
+services:
+  spicedb:
+    image: authzed/spicedb:latest
+    command: serve
+    restart: unless-stopped
+    ports:
+      - "50051:50051"
+      - "8443:8443"
+    environment:
+      - SPICEDB_GRPC_PRESHARED_KEY=foobar
+      - SPICEDB_DATASTORE_ENGINE=memory
+      - SPICEDB_LOG_LEVEL=debug
+    networks:
+      - authz
+
+  schema-loader:
+    image: authzed/zed:latest-debug
+    depends_on:
+      - spicedb
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        sleep 5
+        zed schema write --endpoint=spicedb:50051 --insecure --token=foobar /beep/beep.zed
+        echo 'Schema loaded successfully'
+    volumes:
+      - ./authzed/beep.zed:/beep/beep.zed
+    networks:
+      - authz
+    restart: "no"
+
+  spicedb-playground:
+    image: ghcr.io/authzed/spicedb-playground:latest
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    profiles:
+      - test
+
+  zed-cli:
+    image: authzed/zed:latest-debug
+    entrypoint: ["sleep", "infinity"]
+    restart: unless-stopped
+    volumes:
+      - ./authzed/beep.zed:/beep/beep.zed
+      - ./authzed/validations:/beep/validations
+    depends_on:
+      - spicedb
+    profiles:
+      - test
+
+  listeners:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - spicedb
+    environment:
+      - RABBIT_URI=amqp://guest:guest@rabbitmq:5672
+      - RABBIT_CONSUMER_TAG_SUFFIX=${RABBIT_CONSUMER_TAG_SUFFIX:-default}
+      - AUTHZED_ENDPOINT=spicedb:50051
+      - AUTHZED_TOKEN=foobar
+      - AUTHZED_INSECURE=true
+      - QUEUE_CONFIG_PATH=/app/config/queues.json
+      - RUST_LOG=${RUST_LOG:-info}
+    volumes:
+      - ./config/queues.json:/app/config/queues.json:ro
+    networks:
+      - authz
+
+networks:
+  authz:
+    name: authz_communities
+    external: true
