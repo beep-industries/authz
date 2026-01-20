@@ -1,0 +1,54 @@
+# Build artifacts
+target/
+**/target/
+
+# Git files
+.git/
+.github/
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+!README.md
+IMPLEMENTATION_PROMPT.xml
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CI/CD
+.github/
+
+# Docker files (to avoid nesting)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Testing
+examples/
+**/examples/
+tests/
+**/tests/
+
+# Protobuf/SpiceDB (not needed in runtime)
+buf.yaml
+buf.lock
+spicedb-commands.sh
+
+# Config files (if not needed at runtime)
+config/
+
+# Authzed data
+authzed/
+
+# Cargo cache
+**/.cargo/
