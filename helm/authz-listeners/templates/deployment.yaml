@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "authz-listeners.fullname" . }}
+  labels:
+    {{- include "authz-listeners.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "authz-listeners.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "authz-listeners.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "authz-listeners.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: AUTHZED_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "authz-listeners.fullname" . }}
+                  key: AUTHZED_ENDPOINT
+            - name: AUTHZED_INSECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "authz-listeners.fullname" . }}
+                  key: AUTHZED_INSECURE
+            - name: RABBIT_CONSUMER_TAG_SUFFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "authz-listeners.fullname" . }}
+                  key: RABBIT_CONSUMER_TAG_SUFFIX
+            - name: RUST_LOG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "authz-listeners.fullname" . }}
+                  key: RUST_LOG
+            - name: QUEUE_CONFIG_PATH
+              value: "/app/config/queues.json"
+            - name: AUTHZED_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "authz-listeners.secretName" . }}
+                  key: AUTHZED_TOKEN
+            - name: RABBIT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "authz-listeners.secretName" . }}
+                  key: RABBIT_URI
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "authz-listeners.fullname" . }}
+            items:
+              - key: queues.json
+                path: queues.json
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

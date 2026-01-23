@@ -1,0 +1,13 @@
+apiVersion: v2
+name: authz-listeners
+description: Authorization service for Discord-like application using SpiceDB
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - authorization
+  - spicedb
+  - rabbitmq
+  - authzed
+maintainers:
+  - name: Beep Industries
