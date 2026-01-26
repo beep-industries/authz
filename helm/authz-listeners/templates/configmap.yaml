@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "authz-listeners.fullname" . }}
+  labels:
+    {{- include "authz-listeners.labels" . | nindent 4 }}
+data:
+  AUTHZED_ENDPOINT: {{ .Values.config.authzed.endpoint | quote }}
+  AUTHZED_INSECURE: {{ .Values.config.authzed.insecure | quote }}
+  RABBIT_CONSUMER_TAG_SUFFIX: {{ .Values.config.rabbitmq.consumerTagSuffix | quote }}
+  RUST_LOG: {{ .Values.config.logLevel | quote }}
+  queues.json: |
+    {{- .Values.queues | toPrettyJson | nindent 4 }}
