@@ -91,3 +91,23 @@ securityContext:
   capabilities:
     drop:
       - ALL
+
+# SpiceDB schema migration configuration
+migration:
+  # Enable/disable SpiceDB schema initialization
+  enabled: true
+  # Image for schema loader (zed CLI)
+  image:
+    repository: authzed/zed
+    tag: "latest-debug"
+    pullPolicy: IfNotPresent
+  # Resource limits for init container
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  # Number of retries before the init container fails
+  backoffLimit: 3

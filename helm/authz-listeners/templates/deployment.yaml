@@ -27,6 +27,51 @@ spec:
       serviceAccountName: {{ include "authz-listeners.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.migration.enabled }}
+      initContainers:
+        - name: schema-loader
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag }}"
+          imagePullPolicy: {{ .Values.migration.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for SpiceDB to be ready..."
+              for i in $(seq 1 30); do
+                if grpcurl -plaintext {{ .Values.config.authzed.endpoint }} list > /dev/null 2>&1; then
+                  echo "SpiceDB is ready"
+                  break
+                fi
+                echo "Attempt $i: Waiting for SpiceDB..."
+                sleep 2
+              done
+
+              echo "Loading schema..."
+              zed schema write \
+                --endpoint={{ .Values.config.authzed.endpoint }} \
+                {{- if eq .Values.config.authzed.insecure "true" }}
+                --insecure \
+                {{- end }}
+                --token="$AUTHZED_TOKEN" \
+                /beep/beep.zed
+
+              echo "Schema loaded successfully"
+          env:
+            - name: AUTHZED_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "authz-listeners.secretName" . }}
+                  key: AUTHZED_TOKEN
+          volumeMounts:
+            - name: schema
+              mountPath: /beep
+              readOnly: true
+          resources:
+            {{- toYaml .Values.migration.resources | nindent 12 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -79,6 +124,11 @@ spec:
             items:
               - key: queues.json
                 path: queues.json
+        {{- if .Values.migration.enabled }}
+        - name: schema
+          configMap:
+            name: {{ include "authz-listeners.fullname" . }}-schema
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
