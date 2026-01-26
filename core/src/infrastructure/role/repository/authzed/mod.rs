@@ -65,7 +65,7 @@ impl RoleRepository for AuthzedRoleRepository {
             // Still create the base role->server relationship
             let base_relationship = entities::create_role_server_relationship(&input);
             self.authzed_client
-                .create_relationship(base_relationship)
+                .touch_relationship(base_relationship)
                 .await
                 .map_err(|e| RoleError::CreateRoleError { msg: e.to_string() })?;
         } else {
