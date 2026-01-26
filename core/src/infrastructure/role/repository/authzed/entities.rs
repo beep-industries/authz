@@ -43,7 +43,7 @@ pub fn create_role_to_updates(
 
     // Create base role->server relationship
     let role_server_relationship = create_role_server_relationship(input);
-    updates.push(role_server_relationship.create());
+    updates.push(role_server_relationship.touch());
 
     // Parse permission bitmask to get permission names
     let permission_names = parse_permission_bitmask(input.permissions_bitmask, descriptor);
@@ -67,7 +67,7 @@ pub fn create_role_to_updates(
                 optional_caveat: None,
                 optional_expires_at: None,
             };
-            updates.push(relationship.create());
+            updates.push(relationship.touch());
         } else {
             warn!(
                 permission_name = %permission_name,
