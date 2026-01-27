@@ -17,7 +17,7 @@ tokio-stream = "0.1.17"
 events-protobuf = { git = "https://github.com/beep-industries/events-protobuf.git"}
 dotenv = "0.15.0"
 tracing = "0.1.43"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 permission-translation = "0.3.0"
 
 [dev-dependencies]
