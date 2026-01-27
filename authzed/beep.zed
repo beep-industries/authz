@@ -141,6 +141,7 @@ definition server {
     /**
      * create_invitation indicates permission to create server invitations
      */
+    permission create_invitation = owner + invitation_creator
 
     /**
      * administrator indicates roles that have full administrative access to everything in this server
